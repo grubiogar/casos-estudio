@@ -449,10 +449,21 @@ function initFirebase() {
 }
 function setupSync() {
   if (!db) return;
+  let firstSnap = true;
   db.collection('cases').onSnapshot(snap => {
-    // Preserve local image cache (images may not be stored in Firestore for large files)
     const localImg = {};
     S.cases.forEach(c => { if (c.image) localImg[c.id] = c.image; });
+
+    // Primera sincronización: si Firestore está vacío pero hay datos locales → subirlos
+    if (firstSnap && snap.empty && S.cases.length > 0) {
+      firstSnap = false;
+      const batch = db.batch();
+      S.cases.forEach(c => batch.set(db.collection('cases').doc(c.id), c));
+      batch.commit().catch(e => console.warn('Initial upload error:', e));
+      updateSyncStatus('online');
+      return;
+    }
+    firstSnap = false;
 
     S.cases = [];
     snap.forEach(doc => {
@@ -460,7 +471,13 @@ function setupSync() {
       if (!c.image && localImg[c.id]) c.image = localImg[c.id];
       S.cases.push(c);
     });
-    S.cases.forEach(c => { if (c.validated === undefined) c.validated = isClosed(c); });
+    S.cases.forEach(c => {
+      if (!c.status) {
+        if (c.validated === true) c.status = 'published';
+        else if (isClosed(c))    c.status = 'pending';
+        else                      c.status = 'open';
+      }
+    });
     persistLocal();
     if (S.view === 'list') render();
     updateSyncStatus('online');
@@ -1732,7 +1749,8 @@ document.addEventListener('input', function(e) {
 // ══════════════════════════════════════════════════════════════════
 S.cases = load();
 
-if (!S.cases.length) {
+// Solo carga datos demo en modo local (cuando Firebase no está configurado)
+if (!S.cases.length && !FIREBASE_READY) {
   S.cases = [
     // ── 2022 ──────────────────────────────────────────────────────
     {
