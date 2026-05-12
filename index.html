@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casos de Estudio – Estrategia de Inversión</title>
+  <style>
+/* ── Reset ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+
+/* ── Tokens ─────────────────────────────────────────────────────── */
+:root {
+  --bg:        #0b0e1a;
+  --surface:   #131729;
+  --card:      #1a1f35;
+  --card-hi:   #1f2540;
+  --inp:       #0f1220;
+  --border:    #252d4a;
+  --border-hi: #4f7ef7;
+  --accent:    #4f7ef7;
+  --accent-d:  #3060d0;
+  --green:     #22c55e;
+  --green-d:   #14532d;
+  --red:       #ef4444;
+  --red-d:     #7f1d1d;
+  --amber:     #f59e0b;
+  --amber-d:   #78350f;
+  --text:      #e2e8f0;
+  --muted:     #64748b;
+  --sec:       #94a3b8;
+  --r:         10px;
+  --shadow:    0 8px 32px rgba(0,0,0,.55);
+}
+
+/* ── Base ───────────────────────────────────────────────────────── */
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh; line-height: 1.5;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.hdr {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50; gap: 12px;
+}
+.logo { font-size: 16px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+.logo em { color: var(--sec); font-style: normal; font-weight: 400; }
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 16px; border: none; border-radius: var(--r);
+  font: 600 13px 'Segoe UI', sans-serif; cursor: pointer;
+  transition: all .15s; white-space: nowrap;
+}
+.btn-primary  { background: var(--accent);  color: #fff; }
+.btn-primary:hover  { background: var(--accent-d); }
+.btn-ghost    { background: transparent; color: var(--sec); border: 1px solid var(--border); }
+.btn-ghost:hover    { color: var(--text); background: var(--card); }
+.btn-success  { background: var(--green-d); color: var(--green); border: 1px solid #166534; }
+.btn-success:hover  { background: var(--green); color: #fff; }
+.btn-warning  { background: var(--amber-d); color: var(--amber); border: 1px solid #92400e; }
+.btn-warning:hover  { background: var(--amber); color: #fff; }
+.btn-danger   { background: var(--red-d);   color: var(--red);   border: 1px solid #991b1b; }
+.btn-danger:hover   { background: var(--red);   color: #fff; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-xs { padding: 3px 8px;  font-size: 11px; border-radius: 6px; }
+
+/* ── Main ────────────────────────────────────────────────────────── */
+#main { max-width: 1300px; margin: 0 auto; padding: 24px; }
+
+/* ── Tabs ────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex; gap: 0; border-bottom: 2px solid var(--border);
+  margin-bottom: 24px;
+}
+.tab-btn {
+  padding: 10px 22px; background: transparent; border: none; border-bottom: 3px solid transparent;
+  color: var(--muted); cursor: pointer; font: 600 13px 'Segoe UI', sans-serif;
+  margin-bottom: -2px; transition: all .15s; white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--border); color: var(--muted); border-radius: 20px;
+  font-size: 10px; font-weight: 700; padding: 1px 7px; margin-left: 6px;
+}
+.tab-btn.active .tab-badge { background: rgba(79,126,247,.2); color: var(--accent); }
+
+/* ── Cards grid ─────────────────────────────────────────────────── */
+.grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 16px; margin-top: 20px;
+}
+.case-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden; cursor: pointer; transition: all .15s ease;
+}
+.case-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+.cc-img { width: 100%; height: 150px; object-fit: cover; background: var(--inp); display: block; }
+.cc-no-img {
+  width: 100%; height: 150px; background: var(--inp);
+  display: flex; align-items: center; justify-content: center; font-size: 36px; color: var(--muted);
+}
+.cc-body { padding: 14px 16px; }
+.cc-title { font-size: 18px; font-weight: 800; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.cc-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.badge {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+  border: 1px solid; text-transform: uppercase; letter-spacing: .3px;
+}
+.b-blue   { background: rgba(79,126,247,.1); color: var(--accent); border-color: var(--accent); }
+.b-green  { background: rgba(34,197,94,.1);  color: var(--green);  border-color: var(--green);  }
+.b-amber  { background: rgba(245,158,11,.1); color: var(--amber);  border-color: var(--amber);  }
+.b-red    { background: rgba(239,68,68,.1);  color: var(--red);    border-color: var(--red);    }
+.cc-stats { display: flex; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
+.mini-stat { display: flex; flex-direction: column; gap: 1px; }
+.mini-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+.mini-val   { font-size: 14px; font-weight: 700; }
+
+/* ── Empty ───────────────────────────────────────────────────────── */
+.empty { text-align: center; padding: 80px 24px; color: var(--muted); }
+.empty .icon { font-size: 56px; margin-bottom: 16px; }
+.empty h2 { font-size: 20px; color: var(--sec); margin-bottom: 8px; }
+
+/* ── Form sections ───────────────────────────────────────────────── */
+.section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 20px 24px; margin-bottom: 16px;
+}
+.sec-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--sec); border-bottom: 1px solid var(--border);
+  padding-bottom: 10px; margin-bottom: 18px;
+}
+
+/* ── Form fields ─────────────────────────────────────────────────── */
+.fgrid  { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+.fgrid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.fg.span2 { grid-column: 1 / -1; }
+label { font-size: 11px; font-weight: 700; color: var(--sec); text-transform: uppercase; letter-spacing: .4px; }
+input, select, textarea {
+  background: var(--inp); border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+  font: 13px 'Segoe UI', sans-serif; padding: 9px 11px; width: 100%; transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-hi); }
+input[readonly], textarea[readonly] { opacity: .55; cursor: default; }
+textarea { resize: vertical; min-height: 72px; }
+select option { background: var(--surface); }
+.hint {
+  font-size: 11px; color: var(--amber); background: rgba(245,158,11,.07);
+  border: 1px solid rgba(245,158,11,.2); border-radius: 6px; padding: 5px 10px; margin-top: 3px; line-height: 1.6;
+}
+
+/* ── Lock banner ─────────────────────────────────────────────────── */
+.lock-banner {
+  background: rgba(245,158,11,.07); border: 1px solid rgba(245,158,11,.25);
+  border-radius: var(--r); padding: 12px 18px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px; color: var(--amber); font-size: 13px;
+}
+.lock-banner strong { font-weight: 700; }
+
+/* ── Image upload ────────────────────────────────────────────────── */
+.img-zone {
+  border: 2px dashed var(--border); border-radius: var(--r);
+  padding: 28px; text-align: center; cursor: pointer; transition: all .15s;
+}
+.img-zone:hover, .img-zone.drag-over { border-color: var(--accent); background: rgba(79,126,247,.04); }
+.img-zone.locked { cursor: default; }
+.img-zone.locked:hover { border-color: var(--border); background: transparent; }
+.img-zone img { max-width: 100%; max-height: 280px; border-radius: 8px; object-fit: contain; }
+.img-zone-txt { color: var(--muted); font-size: 13px; }
+.img-zone-txt strong { color: var(--accent); }
+
+/* ── Position tracker ────────────────────────────────────────────── */
+.pos-tracker {
+  background: var(--inp); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 16px; display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.pt-item { display: flex; flex-direction: column; gap: 2px; }
+.pt-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+.pt-val   { font-size: 16px; font-weight: 800; }
+
+/* ── Operations ──────────────────────────────────────────────────── */
+.ops-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+.op-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 16px;
+}
+.op-card.t-exit  { border-left: 3px solid var(--green); }
+.op-card.t-add   { border-left: 3px solid var(--accent); }
+.op-card.t-final { border-left: 3px solid var(--amber); }
+.op-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.op-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+.t-exit  .op-lbl { color: var(--green); }
+.t-add   .op-lbl { color: var(--accent); }
+.t-final .op-lbl { color: var(--amber); }
+.op-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── 5th candle note ─────────────────────────────────────────────── */
+.vela-note {
+  font-size: 11px; color: var(--amber); background: rgba(245,158,11,.06);
+  border: 1px solid rgba(245,158,11,.18); border-radius: 6px; padding: 5px 10px; margin-top: 8px;
+}
+
+/* ── Summary ─────────────────────────────────────────────────────── */
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; }
+.sum-stat { display: flex; flex-direction: column; gap: 4px; }
+.sum-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.sum-val   { font-size: 22px; font-weight: 800; line-height: 1.2; }
+.sum-sub   { font-size: 11px; color: var(--muted); }
+
+/* ── Colors ──────────────────────────────────────────────────────── */
+.pos { color: var(--green); }
+.neg { color: var(--red); }
+.neu { color: var(--text); }
+
+/* ── Back nav ────────────────────────────────────────────────────── */
+.back-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.back-nav h1 { font-size: 20px; font-weight: 800; }
+
+/* ── Toast ───────────────────────────────────────────────────────── */
+#toasts { position: fixed; bottom: 24px; right: 24px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 11px 16px; font-size: 13px; box-shadow: var(--shadow); animation: toastin .2s ease;
+}
+.toast.ok  { border-left: 3px solid var(--green); }
+.toast.err { border-left: 3px solid var(--red); }
+@keyframes toastin { from { transform: translateX(110%); opacity:0; } to { transform:none; opacity:1; } }
+
+/* ── Date picker ─────────────────────────────────────────────────── */
+input[type="date"] { color-scheme: light; }
+
+/* ── Lightbox ────────────────────────────────────────────────────── */
+.lightbox {
+  position: fixed; inset: 0; background: rgba(0,0,0,.92);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+  cursor: zoom-out; animation: lbin .15s ease;
+}
+.lightbox img { max-width: 95vw; max-height: 92vh; object-fit: contain; border-radius: 8px; box-shadow: 0 0 60px rgba(0,0,0,.8); }
+.lightbox-close { position: absolute; top: 16px; right: 20px; color: #fff; font-size: 28px; cursor: pointer; opacity: .7; line-height: 1; }
+.lightbox-close:hover { opacity: 1; }
+@keyframes lbin { from { opacity:0; } to { opacity:1; } }
+
+/* ── Dashboard stats bar ─────────────────────────────────────────── */
+.dash-stats {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.ds-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 3px;
+}
+.ds-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.ds-val   { font-size: 20px; font-weight: 800; }
+.ds-sub   { font-size: 11px; color: var(--muted); }
+
+/* ── Filter bar ─────────────────────────────────────────────────── */
+.filter-bar {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 12px 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 16px;
+}
+.filter-bar input[type="text"] { flex: 1; min-width: 160px; }
+.filter-bar select { width: auto; }
+.view-toggle { display: flex; gap: 2px; margin-left: auto; }
+.view-toggle button {
+  background: var(--inp); border: 1px solid var(--border); color: var(--muted);
+  padding: 5px 11px; border-radius: 6px; cursor: pointer; font-size: 15px;
+  transition: all .15s; line-height: 1;
+}
+.view-toggle button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── Table view ─────────────────────────────────────────────────── */
+.cases-table {
+  width: 100%; border-collapse: collapse; background: var(--card);
+  border-radius: var(--r); overflow: hidden; border: 1px solid var(--border);
+}
+.cases-table thead tr { background: var(--surface); border-bottom: 2px solid var(--border); }
+.cases-table th {
+  padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px; color: var(--muted);
+  white-space: nowrap; cursor: pointer; user-select: none;
+}
+.cases-table th:hover { color: var(--text); }
+.cases-table th.sorted { color: var(--accent); }
+.cases-table td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.cases-table tr:last-child td { border-bottom: none; }
+.cases-table tbody tr { cursor: pointer; transition: background .1s; }
+.cases-table tbody tr:hover { background: var(--card-hi); }
+.sort-arr { font-size: 10px; margin-left: 3px; opacity: .4; }
+.sorted .sort-arr { opacity: 1; }
+.no-results { text-align:center; padding: 48px; color: var(--muted); font-size: 14px; }
+
+/* ── En Seguimiento – list ───────────────────────────────────────── */
+.open-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.open-row {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 14px 18px; display: flex; align-items: center; gap: 16px;
+  cursor: pointer; transition: all .15s;
+}
+.open-row:hover { border-color: var(--accent); background: var(--card-hi); }
+.open-row .or-asset { font-size: 16px; font-weight: 800; min-width: 70px; }
+.open-row .or-meta  { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex: 1; }
+.open-row .or-right { display: flex; gap: 12px; align-items: center; margin-left: auto; }
+.open-row .or-pnl   { font-weight: 700; font-size: 14px; }
+
+/* ── Pending-validation banner ───────────────────────────────────── */
+.pending-banner {
+  background: rgba(79,126,247,.07); border: 1px solid rgba(79,126,247,.3);
+  border-radius: var(--r); padding: 12px 18px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px; color: var(--accent); font-size: 13px;
+  flex-wrap: wrap;
+}
+.pending-banner strong { font-weight: 700; }
+
+/* ── Modal ───────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.72);
+  z-index: 600; display: flex; align-items: center; justify-content: center;
+  animation: lbin .15s ease;
+}
+.modal-box {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 28px 30px; width: 420px; max-width: 92vw; box-shadow: var(--shadow);
+}
+.modal-title { font-size: 17px; font-weight: 800; margin-bottom: 10px; }
+.modal-body  { font-size: 13px; color: var(--sec); line-height: 1.6; margin-bottom: 18px; }
+.modal-body strong { color: var(--text); }
+.modal-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px; }
+.modal-field label { font-size: 11px; font-weight: 700; color: var(--sec); text-transform: uppercase; letter-spacing: .4px; }
+.modal-field input {
+  background: var(--inp); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); font: 14px 'Segoe UI', sans-serif; padding: 10px 12px;
+  letter-spacing: .08em;
+}
+.modal-field input:focus { outline: none; border-color: var(--border-hi); }
+.modal-field input.err   { border-color: var(--red); }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width:600px) {
+  #main { padding: 12px; }
+  .fgrid, .fgrid2 { grid-template-columns: 1fr; }
+  .hdr { flex-wrap: wrap; }
+}
+  </style>
+
+</head>
+<body>
+
+<header class="hdr">
+  <div class="logo">📊 Casos de Estudio <em>— Estrategia de Inversión</em></div>
+  <div id="hdr-actions"></div>
+</header>
+
+<div id="main"></div>
+<div id="toasts"></div>
+<input type="file" id="import-input" accept=".json" style="display:none" data-action="import-file">
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  STATE & PERSISTENCE
+// ══════════════════════════════════════════════════════════════════
+const KEY        = 'inv_cases_v1';
+const AUTHOR_KEY = 'inv_author_name';
+const ADMIN_PIN  = '1987';  // ← cambia este PIN
+
+// ── Firebase (configura aquí para sincronizar con la comunidad) ────
+// 1. Ve a https://console.firebase.google.com y crea un proyecto
+// 2. En Firestore Database → Crear base de datos → modo producción
+// 3. En Configuración del proyecto → Tus apps → Web → Copia la config
+// 4. Pega los valores aquí y despliega en GitHub Pages o Firebase Hosting
+const FIREBASE_CONFIG = {
+  apiKey:            'AIzaSyAS-d5HIrN9iKYbqbNFnDJnCzRMug3cs9M',
+  authDomain:        'comunidadinversores-b9046.firebaseapp.com',
+  projectId:         'comunidadinversores-b9046',
+  storageBucket:     'comunidadinversores-b9046.firebasestorage.app',
+  messagingSenderId: '425271183881',
+  appId:             '1:425271183881:web:3c34257b31f65a01e406d8'
+};
+const FIREBASE_READY = FIREBASE_CONFIG.projectId !== 'YOUR_PROJECT_ID';
+let db = null;
+
+const S = {
+  view:      'list',   // 'list' | 'form'
+  cases:     [],
+  editing:   null,
+  listTab:   'db',     // 'db' | 'pending' | 'open' | 'discarded'
+  listView:  'cards',
+  filter:    { search: '', timeframe: 'all', year: 'all' },
+  sort:      'entry_desc',
+  adminMode: false,    // admin ha desbloqueado el caso actual para editar
+};
+
+function load()         { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } }
+function persistLocal() { localStorage.setItem(KEY, JSON.stringify(S.cases)); }
+function persist()      { persistLocal(); }   // alias backward-compat
+function getDefaultAuthor()  { return localStorage.getItem(AUTHOR_KEY) || ''; }
+function saveDefaultAuthor(n){ if (n && n.trim()) localStorage.setItem(AUTHOR_KEY, n.trim()); }
+
+// ── Firebase helpers ──────────────────────────────────────────────
+function firestoreSave(c) {
+  if (!db) return;
+  db.collection('cases').doc(c.id).set(c)
+    .catch(e => { console.warn('Firestore save:', e); toast('⚠️ Error de sincronización', 'err'); });
+}
+function firestoreDelete(caseId) {
+  if (!db) return;
+  db.collection('cases').doc(caseId).delete()
+    .catch(e => console.warn('Firestore delete:', e));
+}
+function updateSyncStatus(state) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const map = {
+    online:  ['🟢', 'Sincronizado',    'var(--green)'],
+    offline: ['🔴', 'Sin conexión',    'var(--red)'],
+    syncing: ['🔄', 'Sincronizando…',  'var(--amber)'],
+  };
+  const [icon, text, color] = map[state] || map.offline;
+  el.innerHTML = `${icon} <span style="color:${color};font-weight:600">${text}</span>`;
+}
+function initFirebase() {
+  if (!FIREBASE_READY) return;
+  // Carga dinámica: solo si Firebase está configurado (evita bloquear la carga en modo local)
+  const loadScript = src => new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+  loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js')
+    .then(() => loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js'))
+    .then(() => {
+      try {
+        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore();
+        db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+        setupSync();
+      } catch(e) { console.warn('Firebase init error:', e); }
+    })
+    .catch(e => console.warn('No se pudo cargar Firebase SDK:', e));
+}
+function setupSync() {
+  if (!db) return;
+  db.collection('cases').onSnapshot(snap => {
+    // Preserve local image cache (images may not be stored in Firestore for large files)
+    const localImg = {};
+    S.cases.forEach(c => { if (c.image) localImg[c.id] = c.image; });
+
+    S.cases = [];
+    snap.forEach(doc => {
+      const c = { ...doc.data(), id: doc.id };
+      if (!c.image && localImg[c.id]) c.image = localImg[c.id];
+      S.cases.push(c);
+    });
+    S.cases.forEach(c => { if (c.validated === undefined) c.validated = isClosed(c); });
+    persistLocal();
+    if (S.view === 'list') render();
+    updateSyncStatus('online');
+  }, err => {
+    console.warn('Firestore listener error:', err);
+    updateSyncStatus('offline');
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  MODAL (reemplaza prompt/confirm nativos — bloqueados en iframes)
+// ══════════════════════════════════════════════════════════════════
+function showModal({ title, body='', inputType=null, inputLabel='', placeholder='',
+                     confirmLabel='Confirmar', danger=false, onConfirm, onCancel=null }) {
+  document.getElementById('app-modal')?.remove();
+
+  const m = document.createElement('div');
+  m.id = 'app-modal';
+  m.className = 'modal-overlay';
+  m.innerHTML = `
+    <div class="modal-box" id="modal-box">
+      <div class="modal-title">${title}</div>
+      ${body ? `<div class="modal-body">${body}</div>` : ''}
+      ${inputType ? `
+        <div class="modal-field">
+          ${inputLabel ? `<label>${inputLabel}</label>` : ''}
+          <input id="modal-inp" type="${inputType}" autocomplete="off" placeholder="${placeholder}">
+        </div>` : ''}
+      <div class="modal-btns">
+        <button class="btn btn-ghost btn-sm" id="modal-cancel">Cancelar</button>
+        <button class="btn btn-sm ${danger?'btn-danger':'btn-primary'}" id="modal-ok">${confirmLabel}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+
+  const inp  = document.getElementById('modal-inp');
+  const okB  = document.getElementById('modal-ok');
+  const canB = document.getElementById('modal-cancel');
+  if (inp) { inp.focus(); }
+
+  const close = () => m.remove();
+
+  okB.addEventListener('click', () => {
+    const val = inp ? inp.value.trim() : null;
+    if (inputType && !val) { inp.classList.add('err'); inp.focus(); return; }
+    close(); onConfirm(val);
+  });
+  canB.addEventListener('click', () => { close(); onCancel?.(); });
+  m.addEventListener('click', e => { if (e.target === m) { close(); onCancel?.(); } });
+  if (inp) {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') okB.click();
+      if (e.key === 'Escape') canB.click();
+    });
+  } else {
+    const esc = e => { if (e.key === 'Escape') { canB.click(); document.removeEventListener('keydown', esc); } };
+    document.addEventListener('keydown', esc);
+  }
+}
+
+// Pide PIN y luego ejecuta onSuccess
+function withAdminPin(onSuccess) {
+  showModal({
+    title: '🔐 Acceso de administrador',
+    inputType: 'password',
+    inputLabel: 'PIN de administrador',
+    placeholder: '••••',
+    confirmLabel: 'Confirmar',
+    onConfirm: pin => {
+      if (pin !== ADMIN_PIN) { toast('PIN incorrecto', 'err'); return; }
+      onSuccess();
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════════════════════
+function uid() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function num(v, d = 2) {
+  const n = parseFloat(v); if (isNaN(n)) return '—';
+  return n.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+function eur(v, sign = true) {
+  const n = parseFloat(v); if (isNaN(n)) return '—';
+  const abs = Math.abs(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (!sign) return abs + ' €';
+  return (n >= 0 ? '+' : '−') + abs + ' €';
+}
+function pct(v) {
+  const n = parseFloat(v); if (isNaN(n)) return '—';
+  return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+}
+function cls(n) { return parseFloat(n) >= 0 ? 'pos' : 'neg'; }
+function isClosed(c)  { return (c.operations || []).some(o => o.type === 'final_exit'); }
+function caseStatus(c) {
+  if (c.status) return c.status;
+  // Migración desde campo legacy `validated`
+  if (c.validated === true) return 'published';
+  if (isClosed(c)) return 'pending';
+  return 'open';
+}
+function isPublished(c)  { return caseStatus(c) === 'published'; }
+function isPending(c)    { return caseStatus(c) === 'pending'; }
+function isOpenCase(c)   { return caseStatus(c) === 'open'; }
+function isDiscarded(c)  { return caseStatus(c) === 'discarded'; }
+
+function toast(msg, type = 'ok') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  CALCULATIONS
+// ══════════════════════════════════════════════════════════════════
+function sharesFormula(account, price, sl) {
+  const risk = parseFloat(account) * 0.01;
+  const dist = Math.abs(parseFloat(price) - parseFloat(sl));
+  if (!dist) return null;
+  return risk / dist;
+}
+function sharesHintText(account, price, sl) {
+  const risk = parseFloat(account) * 0.01;
+  const dist = Math.abs(parseFloat(price) - parseFloat(sl));
+  const calc = dist ? risk / dist : 0;
+  return `Riesgo 1%: ${eur(risk, false)} | Distancia SL: ${num(dist)} € | Calculado: ${num(calc, 3)} acc. → recomendado: ${Math.floor(calc)} acc.`;
+}
+function calcInitialRisk(c) {
+  const price = parseFloat(c.entryPrice), sl = parseFloat(c.entrySL), shares = parseFloat(c.entryShares);
+  if (!price || !sl || !shares) return null;
+  return Math.abs(price - sl) * shares;
+}
+function calcRR(c) {
+  const risk = calcInitialRisk(c);
+  const pos  = positionState(c);
+  if (!risk) return null;
+  return pos.realizedPnL / risk;
+}
+function fmtRR(rr) {
+  if (rr == null || isNaN(rr)) return '—';
+  return (rr >= 0 ? '+' : '−') + Math.abs(rr).toFixed(2) + ' R';
+}
+
+function positionState(c, upTo = Infinity) {
+  let lots = [], realized = 0;
+  if (parseFloat(c.entryPrice) > 0 && parseFloat(c.entryShares) > 0)
+    lots.push({ price: +c.entryPrice, shares: +c.entryShares });
+
+  for (const op of (c.operations || []).slice(0, upTo)) {
+    const tot = lots.reduce((s,l)=>s+l.shares, 0);
+    const cos = lots.reduce((s,l)=>s+l.price*l.shares, 0);
+    if (op.type === 'add') {
+      if (+op.price > 0 && +op.shares > 0) lots.push({ price: +op.price, shares: +op.shares });
+    } else if (op.type === 'partial_exit' || op.type === 'final_exit') {
+      if (tot > 0 && +op.price > 0 && +op.shares > 0) {
+        const avg = cos / tot, sold = Math.min(+op.shares, tot);
+        realized += (+op.price - avg) * sold;
+        const ratio = sold / tot;
+        lots = lots.map(l => ({ price: l.price, shares: l.shares * (1 - ratio) })).filter(l => l.shares > 0.0005);
+      }
+    }
+  }
+  const ts = lots.reduce((s,l)=>s+l.shares, 0);
+  const tc = lots.reduce((s,l)=>s+l.price*l.shares, 0);
+  return { lots, totalShares: ts, avgCost: ts > 0 ? tc/ts : 0, realizedPnL: realized };
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  FILTER / SORT
+// ══════════════════════════════════════════════════════════════════
+function setListTab(tab) { S.listTab = tab; render(); }
+function filterSearch(v)  { S.filter.search = v.toLowerCase(); renderListContent(); }
+function filterSet(k, v)  { S.filter[k] = v; renderListContent(); }
+function setSort(col) {
+  if (S.sort === col + '_desc') S.sort = col + '_asc'; else S.sort = col + '_desc';
+  renderListContent();
+}
+function toggleView() {
+  S.listView = S.listView === 'cards' ? 'table' : 'cards';
+  renderListContent();
+}
+
+function getYears(cases) {
+  return [...new Set(cases.map(c => (c.entryDate || '').substring(0,4)).filter(Boolean))].sort().reverse();
+}
+
+function applyFiltersSort(cases) {
+  let list = cases.filter(c => {
+    const st = caseStatus(c);
+    if (S.listTab === 'db'        && st !== 'published')  return false;
+    if (S.listTab === 'pending'   && st !== 'pending')    return false;
+    if (S.listTab === 'open'      && st !== 'open')       return false;
+    if (S.listTab === 'discarded' && st !== 'discarded')  return false;
+    const q = S.filter.search;
+    if (q && !(c.asset||'').toLowerCase().includes(q) && !(c.authorName||'').toLowerCase().includes(q)) return false;
+    if (S.filter.timeframe !== 'all' && c.timeframe !== S.filter.timeframe) return false;
+    if (S.filter.year !== 'all' && (c.entryDate||'').substring(0,4) !== S.filter.year) return false;
+    return true;
+  });
+
+  const dir = S.sort.endsWith('_asc') ? 1 : -1;
+  const col = S.sort.replace(/_asc$|_desc$/, '');
+  list.sort((a, b) => {
+    let va, vb;
+    switch (col) {
+      case 'created': va = a.createdAt;    vb = b.createdAt;    break;
+      case 'asset':   va = (a.asset||'').toLowerCase(); vb = (b.asset||'').toLowerCase(); break;
+      case 'author':  va = (a.authorName||'').toLowerCase(); vb = (b.authorName||'').toLowerCase(); break;
+      case 'entry':   va = a.entryDate||''; vb = b.entryDate||''; break;
+      case 'rr':      va = calcRR(a) ?? -Infinity; vb = calcRR(b) ?? -Infinity; break;
+      default:        va = a.entryDate||''; vb = b.entryDate||'';
+    }
+    return va < vb ? dir : va > vb ? -dir : 0;
+  });
+  return list;
+}
+
+function sortTh(col, label) {
+  const active = S.sort.startsWith(col);
+  const arrow  = !active ? '↕' : S.sort.endsWith('_asc') ? '↑' : '↓';
+  return `<th class="${active?'sorted':''}" data-action="sort" data-id="${col}">${label}<span class="sort-arr">${arrow}</span></th>`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso.includes('T') ? iso : iso + 'T00:00:00');
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  LIST VIEW
+// ══════════════════════════════════════════════════════════════════
+function renderList() {
+  const dbCount        = S.cases.filter(isPublished).length;
+  const pendingCount   = S.cases.filter(isPending).length;
+  const openCount      = S.cases.filter(isOpenCase).length;
+  const discardedCount = S.cases.filter(isDiscarded).length;
+
+  document.getElementById('hdr-actions').innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      ${FIREBASE_READY
+        ? `<span id="sync-status" style="font-size:11px;display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--card);border:1px solid var(--border);border-radius:20px">
+             🔄 <span style="color:var(--muted)">Conectando…</span></span>`
+        : `<span title="Configura Firebase para compartir con la comunidad" style="font-size:11px;padding:4px 10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:20px;color:var(--amber)">
+             📡 Modo local</span>`}
+      <button class="btn btn-ghost btn-sm" data-action="export" title="Exportar todos los casos a JSON">📤 Exportar</button>
+      <button class="btn btn-ghost btn-sm" data-action="import-pick" title="Importar desde JSON">📥 Importar</button>
+      <button class="btn btn-primary" data-action="new-case">＋ Nuevo Caso</button>
+    </div>`;
+
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    ${!FIREBASE_READY ? `
+    <div style="background:rgba(79,126,247,.06);border:1px solid rgba(79,126,247,.25);border-radius:var(--r);
+                padding:14px 18px;margin-bottom:18px;font-size:13px;color:var(--sec);display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+      <span style="font-size:20px;line-height:1">📡</span>
+      <div>
+        <strong style="color:var(--text)">Datos guardados solo en este navegador.</strong><br>
+        Para compartir con la comunidad, configura Firebase Firestore y despliega la app en la web.
+        <a href="https://console.firebase.google.com" target="_blank" rel="noopener"
+           style="color:var(--accent);margin-left:6px">→ Firebase Console</a>
+        · Luego edita <code style="background:var(--inp);padding:1px 5px;border-radius:4px">FIREBASE_CONFIG</code> y sube el HTML a
+        <a href="https://pages.github.com" target="_blank" rel="noopener" style="color:var(--accent)">GitHub Pages</a>.
+      </div>
+    </div>` : ''}
+    <div class="tabs">
+      <button class="tab-btn ${S.listTab==='db'?'active':''}" data-action="set-tab" data-id="db">
+        📊 Base de Datos <span class="tab-badge">${dbCount}</span>
+      </button>
+      <button class="tab-btn ${S.listTab==='pending'?'active':''}" data-action="set-tab" data-id="pending">
+        ⏳ Pte. Validación <span class="tab-badge">${pendingCount}</span>
+      </button>
+      <button class="tab-btn ${S.listTab==='open'?'active':''}" data-action="set-tab" data-id="open">
+        🔄 Casos Abiertos <span class="tab-badge">${openCount}</span>
+      </button>
+      <button class="tab-btn ${S.listTab==='discarded'?'active':''}" data-action="set-tab" data-id="discarded">
+        🗑 Descartados <span class="tab-badge">${discardedCount}</span>
+      </button>
+    </div>
+    <div id="tab-content"></div>`;
+
+  renderListContent();
+}
+
+function renderListContent() {
+  const el = document.getElementById('tab-content');
+  if (!el) return;
+  if      (S.listTab === 'db')        renderDBContent(el);
+  else if (S.listTab === 'pending')   renderPendingContent(el);
+  else if (S.listTab === 'open')      renderOpenContent(el);
+  else if (S.listTab === 'discarded') renderDiscardedContent(el);
+}
+
+// ── Base de Datos ─────────────────────────────────────────────────
+function renderDBContent(el) {
+  const pub     = S.cases.filter(isPublished);
+  const allRR   = pub.map(c => calcRR(c)).filter(r => r != null);
+  const avgRR   = allRR.length ? allRR.reduce((s,r)=>s+r,0)/allRR.length : null;
+  const bestRR  = allRR.length ? Math.max(...allRR) : null;
+  const worstRR = allRR.length ? Math.min(...allRR) : null;
+  const yearsN  = new Set(pub.map(c => (c.entryDate||'').substring(0,4)).filter(Boolean)).size;
+  const assetsN = new Set(pub.map(c => c.asset).filter(Boolean)).size;
+  const years   = getYears(pub);
+
+  el.innerHTML = `
+    <div class="dash-stats">
+      <div class="ds-card">
+        <span class="ds-label">Casos</span>
+        <span class="ds-val">${pub.length}</span>
+      </div>
+      <div class="ds-card">
+        <span class="ds-label">Años</span>
+        <span class="ds-val">${yearsN}</span>
+      </div>
+      <div class="ds-card">
+        <span class="ds-label">Activos</span>
+        <span class="ds-val">${assetsN}</span>
+      </div>
+      <div class="ds-card">
+        <span class="ds-label">R:R Promedio</span>
+        <span class="ds-val ${avgRR!=null?cls(avgRR):''}">${fmtRR(avgRR)}</span>
+      </div>
+      <div class="ds-card">
+        <span class="ds-label">Mejor R:R</span>
+        <span class="ds-val pos">${fmtRR(bestRR)}</span>
+      </div>
+      <div class="ds-card">
+        <span class="ds-label">Peor R:R</span>
+        <span class="ds-val ${worstRR!=null?cls(worstRR):''}">${fmtRR(worstRR)}</span>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <input type="text" placeholder="🔍 Buscar activo o autor..."
+        value="${esc(S.filter.search)}" data-action="filter-search">
+      <select data-action="filter-year">
+        <option value="all" ${S.filter.year==='all'?'selected':''}>Todos los años</option>
+        ${years.map(y=>`<option value="${y}" ${S.filter.year===y?'selected':''}>${y}</option>`).join('')}
+      </select>
+      <select data-action="filter-timeframe">
+        <option value="all"     ${S.filter.timeframe==='all'?'selected':''}>Todas las temporalidades</option>
+        <option value="semanal" ${S.filter.timeframe==='semanal'?'selected':''}>Semanal</option>
+        <option value="diaria"  ${S.filter.timeframe==='diaria'?'selected':''}>Diaria</option>
+      </select>
+      <div class="view-toggle">
+        <button class="${S.listView==='cards'?'active':''}" data-action="toggle-view" title="Tarjetas">⊞</button>
+        <button class="${S.listView==='table'?'active':''}" data-action="toggle-view" title="Tabla">☰</button>
+      </div>
+    </div>
+
+    <div id="list-content"></div>`;
+
+  renderFilteredList();
+}
+
+// ── Fila reutilizable para las 3 listas no-DB ────────────────────
+function makeCaseRow(c, context) {
+  const ops    = c.operations || [];
+  const lastOp = ops.length ? ops[ops.length-1] : null;
+  const pos    = positionState(c);
+  const rr     = calcRR(c);
+
+  let right = '';
+  if (context === 'open') {
+    right = `
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase">En posición</div>
+        <div style="font-weight:700">${num(pos.totalShares,2)} acc.</div>
+      </div>
+      <button class="btn btn-ghost btn-xs">Editar →</button>`;
+  } else if (context === 'pending') {
+    right = `
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase">R:R</div>
+        <div style="font-weight:800;font-size:15px" class="${rr!=null?cls(rr):''}">${fmtRR(rr)}</div>
+      </div>
+      <button class="btn btn-xs" style="background:rgba(79,126,247,.15);color:var(--accent);border:1px solid rgba(79,126,247,.4);white-space:nowrap">⏳ Ver →</button>`;
+  } else if (context === 'discarded') {
+    right = `
+      <div style="text-align:right;max-width:180px">
+        ${c.discardReason ? `<div style="font-size:11px;color:var(--red);line-height:1.3">${esc(c.discardReason)}</div>` : ''}
+      </div>
+      <button class="btn btn-ghost btn-xs">Ver →</button>`;
+  }
+
+  return `
+    <div class="open-row" data-action="open-case" data-id="${c.id}">
+      <div class="or-asset">${esc(c.asset)||'—'}</div>
+      <div class="or-meta">
+        <span class="badge b-blue">${c.timeframe==='semanal'?'Semanal':'Diario'}</span>
+        ${c.authorName?`<span class="badge b-blue">${esc(c.authorName)}</span>`:''}
+        <span style="color:var(--muted);font-size:12px">Entrada ${fmtDate(c.entryDate)}</span>
+        ${lastOp?`<span style="color:var(--muted);font-size:12px">· Últ. op. ${fmtDate(lastOp.date)}</span>`:''}
+        ${context==='discarded'&&c.discardedAt?`<span style="color:var(--red);font-size:12px">Descartado ${fmtDate(c.discardedAt)}</span>`:''}
+      </div>
+      <div class="or-right">${right}</div>
+    </div>`;
+}
+
+// ── Pte. Validación ────────────────────────────────────────────────
+function renderPendingContent(el) {
+  const cases = [...S.cases.filter(isPending)]
+    .sort((a,b) => (a.updatedAt||'') < (b.updatedAt||'') ? 1 : -1);
+  if (!cases.length) {
+    el.innerHTML = `
+      <div class="empty">
+        <div class="icon">⏳</div>
+        <h2>Sin casos pendientes</h2>
+        <p>Cuando un caso tenga salida final, aparecerá aquí para que el administrador lo revise.</p>
+      </div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;padding:10px 14px;
+                background:var(--card);border:1px solid var(--border);border-radius:8px">
+      ℹ️ Estos casos están cerrados y esperan revisión del administrador.
+      Todos pueden consultarlos en <strong>modo lectura</strong>.
+    </div>
+    <div class="open-list">${cases.map(c => makeCaseRow(c,'pending')).join('')}</div>`;
+}
+
+// ── Casos Abiertos ─────────────────────────────────────────────────
+function renderOpenContent(el) {
+  const cases = [...S.cases.filter(isOpenCase)]
+    .sort((a,b) => (a.updatedAt||'') < (b.updatedAt||'') ? 1 : -1);
+  if (!cases.length) {
+    el.innerHTML = `
+      <div class="empty">
+        <div class="icon">🔄</div>
+        <h2>No hay casos abiertos</h2>
+        <p>Registra un nuevo caso cuando abras una posición.<br>
+           Cuando tenga salida final pasará automáticamente a Pte. Validación.</p><br>
+        <button class="btn btn-primary" data-action="new-case">＋ Nuevo Caso</button>
+      </div>`;
+    return;
+  }
+  el.innerHTML = `<div class="open-list">${cases.map(c => makeCaseRow(c,'open')).join('')}</div>`;
+}
+
+// ── Casos Descartados ──────────────────────────────────────────────
+function renderDiscardedContent(el) {
+  const cases = [...S.cases.filter(isDiscarded)]
+    .sort((a,b) => (a.discardedAt||'') < (b.discardedAt||'') ? 1 : -1);
+  if (!cases.length) {
+    el.innerHTML = `
+      <div class="empty">
+        <div class="icon">🗑</div>
+        <h2>Sin casos descartados</h2>
+        <p>Los casos descartados por el administrador aparecerán aquí,<br>
+           con su motivo de descarte. El admin puede volver a publicarlos.</p>
+      </div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;padding:10px 14px;
+                background:var(--card);border:1px solid var(--border);border-radius:8px">
+      ℹ️ El administrador puede volver a publicar o mover a Pte. Validación cualquier caso descartado.
+    </div>
+    <div class="open-list">${cases.map(c => makeCaseRow(c,'discarded')).join('')}</div>`;
+}
+
+function renderFilteredList() {
+  const filtered = applyFiltersSort(S.cases);
+  const el = document.getElementById('list-content');
+  if (!el) return;
+  if (!filtered.length) {
+    el.innerHTML = `<div class="no-results">No hay casos que coincidan con los filtros.</div>`;
+    return;
+  }
+  if (S.listView === 'table') el.innerHTML = renderTable(filtered);
+  else el.innerHTML = `<div class="grid">${filtered.map(renderCard).join('')}</div>`;
+}
+
+function renderCard(c) {
+  const pos = positionState(c), rr = calcRR(c);
+  const imgHTML = c.image
+    ? `<img class="cc-img" src="${c.image}" alt="${esc(c.asset)}">`
+    : `<div class="cc-no-img">📊</div>`;
+  return `
+    <div class="case-card" data-action="open-case" data-id="${c.id}">
+      ${imgHTML}
+      <div class="cc-body">
+        <div class="cc-title">
+          <span>${esc(c.asset)||'<em style="color:var(--muted)">Sin ticker</em>'}</span>
+          <span class="${rr!=null?cls(rr):''}" style="font-size:15px;font-weight:800">${fmtRR(rr)}</span>
+        </div>
+        <div class="cc-meta">
+          <span class="badge b-blue">${c.timeframe==='semanal'?'Semanal':'Diario'}</span>
+          ${c.authorName?`<span class="badge b-blue">${esc(c.authorName)}</span>`:''}
+          ${c.entryDate?`<span class="badge b-amber">${(c.entryDate||'').substring(0,4)}</span>`:''}
+        </div>
+        <div class="cc-stats">
+          <div class="mini-stat">
+            <span class="mini-label">Entrada</span>
+            <span class="mini-val" style="font-size:12px">${fmtDate(c.entryDate)}</span>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-label">R:R</span>
+            <span class="mini-val ${rr!=null?cls(rr):''}">${fmtRR(rr)}</span>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-label">P&amp;G</span>
+            <span class="mini-val ${cls(pos.realizedPnL)}">${eur(pos.realizedPnL)}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderTable(cases) {
+  const rows = cases.map(c => {
+    const rr = calcRR(c);
+    return `
+      <tr data-action="open-case" data-id="${c.id}">
+        <td>${(c.entryDate||'').substring(0,4)||'—'}</td>
+        <td><strong>${esc(c.asset)||'—'}</strong></td>
+        <td>${fmtDate(c.entryDate)}</td>
+        <td><span class="badge b-blue">${c.timeframe==='semanal'?'Semanal':'Diario'}</span></td>
+        <td class="${rr!=null?cls(rr):''}" style="font-weight:800;font-size:15px">${fmtRR(rr)}</td>
+        <td>${esc(c.authorName)||'<span style="color:var(--muted)">—</span>'}</td>
+        <td>${fmtDate(c.createdAt)}</td>
+        <td><button class="btn btn-ghost btn-xs" data-action="open-case" data-id="${c.id}" data-stop="1">Ver →</button></td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <table class="cases-table">
+      <thead><tr>
+        ${sortTh('entry','Año / Fecha Entrada')}
+        ${sortTh('asset','Activo')}
+        <th>Fecha Entrada</th>
+        <th>Temporalidad</th>
+        ${sortTh('rr','Ratio R:R')}
+        ${sortTh('author','Autor')}
+        ${sortTh('created','Fecha Creación')}
+        <th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  FORM VIEW
+// ══════════════════════════════════════════════════════════════════
+function renderForm() {
+  const c      = S.editing;
+  const isNew  = !S.cases.find(x => x.id === c.id);
+  const status = caseStatus(c);
+  const locked = status !== 'open' && !S.adminMode;
+  const pos    = positionState(c);
+
+  const statusBadge = {
+    published: `<span class="badge b-green" style="font-size:11px;padding:4px 10px">🔒 Publicado</span>`,
+    pending:   `<span class="badge b-blue"  style="font-size:11px;padding:4px 10px">⏳ Pte. Validación</span>`,
+    discarded: `<span class="badge b-red"   style="font-size:11px;padding:4px 10px">🗑 Descartado</span>`,
+    open:      `<span class="badge b-amber" style="font-size:11px;padding:4px 10px">🔄 Abierto</span>`,
+  }[status] || '';
+
+  // Header buttons
+  document.getElementById('hdr-actions').innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-ghost btn-sm" data-action="go-back">← Volver</button>
+      ${!locked ? `<button class="btn btn-primary" data-action="save-case">💾 Guardar</button>` : ''}
+      ${status === 'open' && !isNew ? `<button class="btn btn-danger btn-sm" data-action="delete-case">🗑 Eliminar</button>` : ''}
+      ${S.adminMode ? `<button class="btn btn-warning btn-sm" data-action="exit-admin-mode">🔓 Salir admin</button>` : ''}
+    </div>`;
+
+  // Admin action buttons (inline helper)
+  const adminBtn = (action, label, style='') =>
+    `<button class="btn btn-xs" data-action="${action}" style="${style}">${label}</button>`;
+
+  const bannerHTML = (() => {
+    if (S.adminMode) return `
+      <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);
+                  border-radius:var(--r);padding:10px 16px;margin-bottom:16px;
+                  display:flex;align-items:center;gap:8px;color:var(--amber);font-size:13px;flex-wrap:wrap">
+        🔓 <strong>Modo Administrador activo</strong> — edita los campos y guarda los cambios.
+      </div>`;
+    if (status === 'published') return `
+      <div class="lock-banner">
+        🔒 <span><strong>Publicado — solo lectura.</strong> Visible en la Base de Datos.</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          ${adminBtn('admin-unlock',        '🔓 Editar')}
+          ${adminBtn('admin-move-to-pending','⬅ Pte. Validación','background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.4)')}
+          ${adminBtn('admin-discard',        '❌ Descartar','background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.4)')}
+          ${adminBtn('admin-delete',         '🗑 Eliminar','background:var(--red-d);color:var(--red);border:1px solid #991b1b')}
+        </div>
+      </div>`;
+    if (status === 'pending') return `
+      <div class="pending-banner">
+        ⏳ <span><strong>Pendiente de validación.</strong> Caso cerrado en espera de revisión.</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          ${adminBtn('admin-unlock',  '🔓 Editar')}
+          ${adminBtn('admin-publish', '✅ Publicar','background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.4)')}
+          ${adminBtn('admin-discard', '❌ Descartar','background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.4)')}
+        </div>
+      </div>`;
+    if (status === 'discarded') return `
+      <div style="background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.3);
+                  border-radius:var(--r);padding:12px 18px;margin-bottom:20px;
+                  display:flex;align-items:flex-start;gap:10px;color:var(--red);font-size:13px;flex-wrap:wrap">
+        🗑 <div style="flex:1">
+          <strong>Caso descartado.</strong>
+          ${c.discardReason?`<div style="margin-top:4px;color:var(--sec)">Motivo: <em>${esc(c.discardReason)}</em></div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${adminBtn('admin-unlock',         '🔓 Editar','color:var(--sec);background:var(--card);border:1px solid var(--border)')}
+          ${adminBtn('admin-publish',        '✅ Publicar','background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.4)')}
+          ${adminBtn('admin-move-to-pending','⬅ Pte. Validación','background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.4)')}
+          ${adminBtn('admin-delete',         '🗑 Eliminar','background:var(--red-d);color:var(--red);border:1px solid #991b1b')}
+        </div>
+      </div>`;
+    return '';
+  })();
+
+  document.getElementById('main').innerHTML = `
+    <div class="back-nav">
+      <button class="btn btn-ghost btn-sm" data-action="go-back">←</button>
+      <h1>${isNew ? 'Nuevo Caso de Estudio' : esc(c.asset) || 'Caso de Estudio'}</h1>
+      ${statusBadge}
+    </div>
+
+    ${bannerHTML}
+
+    <!-- IMAGEN -->
+    <div class="section">
+      <div class="sec-title">📷 Imagen del Gráfico</div>
+      <div class="img-zone ${locked?'locked':''}" id="drop-zone" ${locked?'':'data-action="pick-img"'}>
+        ${c.image
+          ? `<img src="${c.image}" alt="gráfico" data-action="zoom-img" style="cursor:zoom-in" title="Click para ampliar">
+             ${!locked?`<p style="margin-top:8px;color:var(--muted);font-size:12px">Click para ampliar · Fuera de la imagen para cambiar</p>`:
+                       `<p style="margin-top:8px;color:var(--muted);font-size:12px">Click para ampliar</p>`}`
+          : `<div style="font-size:48px;margin-bottom:10px">📈</div>
+             <div class="img-zone-txt">
+               ${locked?'Sin imagen':'<strong>Click o arrastra</strong> para subir el gráfico<br><span style="font-size:11px;color:var(--muted)">PNG · JPG · WebP</span>'}
+             </div>`}
+      </div>
+      ${!locked ? `<input type="file" id="img-input" accept="image/*" style="display:none" data-action="img-upload">` : ''}
+      ${!locked && c.image ? `<button class="btn btn-ghost btn-sm" style="margin-top:8px" data-action="remove-img">✕ Quitar imagen</button>` : ''}
+    </div>
+
+    <!-- INFO GENERAL -->
+    <div class="section">
+      <div class="sec-title">📋 Información General</div>
+      <div class="fgrid">
+        <div class="fg">
+          <label>Activo / Ticker</label>
+          <input id="f-asset" type="text" value="${esc(c.asset)}" placeholder="Ej: SNDK, AAPL..." ${locked?'readonly':''}>
+        </div>
+        <div class="fg">
+          <label>Tamaño de Cuenta (€)</label>
+          <input id="f-account" type="number" value="${c.accountSize??10000}" min="0" step="100" ${locked?'readonly':'data-action="account-change"'}>
+        </div>
+        <div class="fg">
+          <label>Temporalidad</label>
+          <select id="f-timeframe" ${locked?'disabled':''}>
+            <option value="semanal" ${c.timeframe==='semanal'?'selected':''}>📅 Semanal</option>
+            <option value="diaria"  ${c.timeframe==='diaria'?'selected':''}>📅 Diaria</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Autor / Nombre</label>
+          <input id="f-author" type="text" value="${esc(c.authorName)}" placeholder="Tu nombre..."
+            ${locked?'readonly':'data-action="save-author"'}>
+        </div>
+      </div>
+      <div class="fg span2" style="margin-top:14px">
+        <label>Notas / Contexto</label>
+        <textarea id="f-notes" ${locked?'readonly':''}>${esc(c.notes)}</textarea>
+      </div>
+    </div>
+
+    <!-- ENTRADA INICIAL -->
+    <div class="section">
+      <div class="sec-title">🟢 Entrada Inicial</div>
+      <div class="fgrid">
+        <div class="fg">
+          <label>Fecha de Entrada</label>
+          <input id="f-entry-date" type="date" value="${c.entryDate||''}" ${locked?'readonly':''}>
+        </div>
+        <div class="fg">
+          <label>Precio de Entrada (€)</label>
+          <input id="f-entry-price" type="number" value="${c.entryPrice||''}" step="0.01" placeholder="290"
+            ${locked?'readonly':'data-action="entry-change"'}>
+        </div>
+        <div class="fg">
+          <label>Stop Loss Inicial (€)</label>
+          <input id="f-entry-sl" type="number" value="${c.entrySL||''}" step="0.01" placeholder="264"
+            ${locked?'readonly':'data-action="entry-change"'}>
+        </div>
+        <div class="fg">
+          <label>Acciones Calculadas (fórmula)</label>
+          <input id="f-shares-calc" type="text" readonly value="${c.entrySharesCalc!=null?num(c.entrySharesCalc,3):'—'}">
+          ${!locked?`<div id="entry-hint" class="hint" style="display:${c.entryPrice&&c.entrySL?'block':'none'}">
+            ${c.entryPrice&&c.entrySL?sharesHintText(c.accountSize??10000,c.entryPrice,c.entrySL):''}
+          </div>`:''}
+        </div>
+        <div class="fg">
+          <label>Acciones Compradas (real)</label>
+          <input id="f-entry-shares" type="number" value="${c.entryShares||''}" step="0.5" placeholder="3" ${locked?'readonly':''}>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPERACIONES -->
+    <div class="section">
+      <div class="sec-title">📊 Operaciones</div>
+      <div class="pos-tracker" id="pos-tracker">${posTrackerHTML(pos, c)}</div>
+      <div class="ops-list" id="ops-list">${renderOps(c, pos, locked)}</div>
+      ${!locked ? `
+      <div class="op-btns">
+        <button class="btn btn-success btn-sm" data-action="add-op" data-param="partial_exit">＋ Salida Parcial</button>
+        <button class="btn btn-ghost btn-sm"   data-action="add-op" data-param="add">＋ Suma Posición</button>
+        <button class="btn btn-warning btn-sm" data-action="add-op" data-param="final_exit">＋ Salida Final</button>
+      </div>` : ''}
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="section" id="summary-section">
+      <div class="sec-title">📈 Resumen P&amp;G</div>
+      <div id="summary-box">${renderSummary(c, pos)}</div>
+    </div>
+  `;
+
+  if (!locked) {
+    const dz = document.getElementById('drop-zone');
+    if (dz) {
+      dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('drag-over');
+        const file = e.dataTransfer?.files[0];
+        if (file?.type.startsWith('image/')) {
+          const inp = document.getElementById('img-input');
+          const dt = new DataTransfer(); dt.items.add(file); inp.files = dt.files;
+          handleImg({ target: inp });
+        }
+      });
+    }
+  }
+}
+
+// ── Position tracker ──────────────────────────────────────────────
+function posTrackerHTML(pos, c) {
+  const rr = c ? calcRR(c) : null, risk = c ? calcInitialRisk(c) : null;
+  return `
+    <div class="pt-item"><span class="pt-label">Acciones en posición</span><span class="pt-val">${num(pos.totalShares,2)}</span></div>
+    <div class="pt-item"><span class="pt-label">Precio Medio</span><span class="pt-val">${pos.avgCost?eur(pos.avgCost,false):'—'}</span></div>
+    <div class="pt-item"><span class="pt-label">P&amp;G Realizado</span><span class="pt-val ${cls(pos.realizedPnL)}">${eur(pos.realizedPnL)}</span></div>
+    <div class="pt-item"><span class="pt-label">Ratio R:R</span><span class="pt-val ${rr!=null?cls(rr):''}">${fmtRR(rr)}</span></div>
+    ${risk!=null?`<div class="pt-item"><span class="pt-label">Riesgo Inicial (1R)</span><span class="pt-val" style="color:var(--red)">${eur(risk,false)}</span></div>`:''}`;
+}
+
+// ── Operations ────────────────────────────────────────────────────
+function renderOps(c, pos, locked = false) {
+  const ops = c.operations || [];
+  if (!ops.length) return `<div style="color:var(--muted);font-size:13px;padding:4px 0">Aún no hay operaciones.</div>`;
+
+  return ops.map((op, i) => {
+    const before = positionState(c, i), after = positionState(c, i+1);
+    let pnl = null;
+    if ((op.type==='partial_exit'||op.type==='final_exit') && +op.price>0 && +op.shares>0)
+      pnl = (+op.price - before.avgCost) * +op.shares;
+
+    const typeInfo = {
+      partial_exit: { cls:'t-exit',  lbl:'🟡 Salida Parcial',    sharesLbl:'Acciones vendidas'  },
+      add:          { cls:'t-add',   lbl:'🔵 Suma de Posición',   sharesLbl:'Acciones compradas' },
+      final_exit:   { cls:'t-final', lbl:'🔴 Salida Final',       sharesLbl:'Acciones vendidas'  },
+    }[op.type];
+
+    const risk = calcInitialRisk(c);
+    const opRR = (pnl!=null&&risk) ? pnl/risk : null;
+
+    const finalShares = before.totalShares;
+    if (op.type==='final_exit' && finalShares>0) op.shares = parseFloat(finalShares.toFixed(4));
+
+    const sharesField = (op.type==='final_exit' || locked)
+      ? `<div class="fg"><label>${typeInfo.sharesLbl}</label>
+           <input type="text" readonly value="${num(op.shares||finalShares||0,4)}"
+             style="color:${op.type==='final_exit'?'var(--amber)':'inherit'}"></div>`
+      : `<div class="fg"><label>${typeInfo.sharesLbl}</label>
+           <input type="number" value="${op.shares||''}" step="0.5" placeholder="Nº acciones"
+             data-action="update-op-shares" data-id="${op.id}"></div>`;
+
+    const dateField  = locked
+      ? `<div class="fg"><label>Fecha</label><input type="text" readonly value="${fmtDate(op.date)}"></div>`
+      : `<div class="fg"><label>Fecha</label><input type="date" value="${op.date||''}" data-action="update-op-date" data-id="${op.id}"></div>`;
+
+    const priceField = locked
+      ? `<div class="fg"><label>Precio (€)</label><input type="text" readonly value="${op.price?eur(op.price,false):'—'}"></div>`
+      : `<div class="fg"><label>Precio (€)</label><input type="number" value="${op.price||''}" step="0.01" placeholder="Precio" data-action="update-op-price" data-id="${op.id}"></div>`;
+
+    const addNote = op.type==='add'
+      ? `<div class="vela-note" style="border-color:rgba(79,126,247,.25);background:rgba(79,126,247,.06);color:var(--accent)">ℹ️ Suma a <strong>riesgo 0</strong> — el stop inicial ya está en break-even</div>`
+      : '';
+    const velaNote = op.type==='partial_exit'
+      ? `<div class="vela-note">⏰ Regla: sacar el 50% en la <strong>5ª vela ${c.timeframe==='semanal'?'semanal':'diaria'}</strong> tras el evento</div>`
+      : '';
+
+    return `
+      <div class="op-card ${typeInfo.cls}" id="op-${op.id}">
+        <div class="op-hdr">
+          <span class="op-lbl">${typeInfo.lbl}</span>
+          ${!locked?`<button class="btn btn-ghost btn-xs" data-action="delete-op" data-id="${op.id}">✕ Borrar</button>`:''}
+        </div>
+        <div class="fgrid">
+          ${dateField}${priceField}${sharesField}
+          ${pnl!=null?`<div class="fg"><label>P&amp;G Calculado</label>
+            <input type="text" readonly value="${eur(pnl)}" style="color:${pnl>=0?'var(--green)':'var(--red)'}"></div>`:''}
+          ${opRR!=null?`<div class="fg"><label>R obtenido</label>
+            <input type="text" readonly value="${fmtRR(opRR)}" style="color:${opRR>=0?'var(--green)':'var(--red)'}"></div>`:''}
+          <div class="fg"><label>Posición tras operación</label>
+            <input type="text" readonly value="${num(after.totalShares,2)} acc.${after.totalShares>0?' @ '+eur(after.avgCost,false):' (cerrada)'}">
+          </div>
+        </div>
+        ${addNote}${velaNote}
+      </div>`;
+  }).join('');
+}
+
+// ── Summary ───────────────────────────────────────────────────────
+function renderSummary(c, pos) {
+  const ops = c.operations || [];
+  const adds = ops.filter(o=>o.type==='add'), exits = ops.filter(o=>o.type==='partial_exit');
+  const hasFinal = ops.some(o=>o.type==='final_exit');
+  const invested = (+c.entryPrice||0)*(+c.entryShares||0) + adds.reduce((s,a)=>s+(+a.price||0)*(+a.shares||0),0);
+  const account = c.accountSize??10000, pnlPct = pos.realizedPnL/account*100;
+  const ir = calcInitialRisk(c), rr = calcRR(c);
+
+  return `
+    <div class="summary-grid">
+      <div class="sum-stat">
+        <span class="sum-label">Estado</span>
+        <span class="sum-val" style="font-size:16px">${hasFinal?'🔴 Cerrado':'🟢 Abierto'}</span>
+      </div>
+      <div class="sum-stat">
+        <span class="sum-label">Ratio R:R Total</span>
+        <span class="sum-val ${rr!=null?cls(rr):'neu'}" style="font-size:26px">${fmtRR(rr)}</span>
+        ${ir!=null?`<span class="sum-sub">Riesgo inicial (1R): ${eur(ir,false)}</span>`:''}
+      </div>
+      <div class="sum-stat">
+        <span class="sum-label">P&amp;G Total Realizado</span>
+        <span class="sum-val ${cls(pos.realizedPnL)}">${eur(pos.realizedPnL)}</span>
+        <span class="sum-sub">${pct(pnlPct)} sobre cuenta (${eur(account,false)})</span>
+      </div>
+      <div class="sum-stat">
+        <span class="sum-label">Capital Invertido</span>
+        <span class="sum-val neu" style="font-size:17px">${eur(invested,false)}</span>
+      </div>
+      <div class="sum-stat">
+        <span class="sum-label">Posición Abierta</span>
+        <span class="sum-val neu" style="font-size:17px">${num(pos.totalShares,2)} acc.</span>
+        ${pos.totalShares>0?`<span class="sum-sub">@ ${eur(pos.avgCost,false)} promedio</span>`:''}
+      </div>
+      <div class="sum-stat"><span class="sum-label">Salidas Parciales</span><span class="sum-val neu" style="font-size:17px">${exits.length}</span></div>
+      <div class="sum-stat"><span class="sum-label">Sumas</span><span class="sum-val neu" style="font-size:17px">${adds.length}</span></div>
+    </div>`;
+}
+
+function refreshOps() {
+  collectFormValues();
+  const c = S.editing, pos = positionState(c);
+  const pt = document.getElementById('pos-tracker');
+  const ol = document.getElementById('ops-list');
+  const sb = document.getElementById('summary-box');
+  if (pt) pt.innerHTML = posTrackerHTML(pos, c);
+  if (ol) ol.innerHTML = renderOps(c, pos, false);
+  if (sb) sb.innerHTML = renderSummary(c, pos);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  ACTIONS – CASE CRUD
+// ══════════════════════════════════════════════════════════════════
+function newCase() {
+  S.editing = {
+    id: uid(), createdAt: new Date().toISOString(),
+    asset: '', authorName: getDefaultAuthor(), image: null, accountSize: 10000,
+    timeframe: 'semanal', notes: '', status: 'open',
+    entryDate: '', entryPrice: '', entrySL: '', entrySharesCalc: null, entryShares: '',
+    operations: [],
+  };
+  S.adminMode = false;
+  S.view = 'form'; render();
+}
+
+function openCase(id) {
+  const c = S.cases.find(x => x.id === id);
+  if (!c) return;
+  S.editing = JSON.parse(JSON.stringify(c));
+  S.adminMode = false;
+  S.view = 'form'; render();
+}
+
+function collectFormValues() {
+  const c = S.editing;
+  c.asset       = document.getElementById('f-asset')?.value?.trim() ?? '';
+  c.authorName  = document.getElementById('f-author')?.value?.trim() ?? '';
+  c.accountSize = parseFloat(document.getElementById('f-account')?.value) || 10000;
+  c.timeframe   = document.getElementById('f-timeframe')?.value ?? 'semanal';
+  c.notes       = document.getElementById('f-notes')?.value?.trim() ?? '';
+  saveDefaultAuthor(c.authorName);
+  c.entryDate   = document.getElementById('f-entry-date')?.value ?? '';
+  c.entryPrice  = parseFloat(document.getElementById('f-entry-price')?.value) || '';
+  c.entrySL     = parseFloat(document.getElementById('f-entry-sl')?.value) || '';
+  c.entryShares = parseFloat(document.getElementById('f-entry-shares')?.value) || '';
+  c.updatedAt   = new Date().toISOString();
+  if (c.entryPrice && c.entrySL)
+    c.entrySharesCalc = sharesFormula(c.accountSize, c.entryPrice, c.entrySL);
+}
+
+function saveCase() {
+  collectFormValues();
+  const c = S.editing;
+  // Auto-route: si es un caso abierto y ya tiene salida final → Pte. Validación
+  let msg = '✅ Caso guardado';
+  if (!S.adminMode && caseStatus(c) === 'open' && isClosed(c)) {
+    c.status = 'pending';
+    msg = '✅ Guardado y enviado a Pte. Validación (tiene salida final)';
+  }
+  const idx = S.cases.findIndex(x => x.id === c.id);
+  if (idx >= 0) S.cases[idx] = c; else S.cases.unshift(c);
+  persist();
+  firestoreSave(c);
+  S.adminMode = false;
+  toast(msg);
+  render();
+}
+
+function deleteCase() {
+  showModal({
+    title: '🗑 Eliminar caso',
+    body: '¿Eliminar este caso? No se puede deshacer.',
+    confirmLabel: 'Eliminar',
+    danger: true,
+    onConfirm: () => {
+      const id = S.editing.id;
+      S.cases = S.cases.filter(x => x.id !== id);
+      persist(); S.view = 'list'; S.editing = null; S.adminMode = false;
+      firestoreDelete(id);
+      toast('🗑 Caso eliminado'); render();
+    }
+  });
+}
+
+function goBack() {
+  showModal({
+    title: '¿Volver?',
+    body: 'Los cambios no guardados se perderán.',
+    confirmLabel: 'Sí, volver',
+    onConfirm: () => { S.view = 'list'; S.editing = null; S.adminMode = false; render(); }
+  });
+}
+
+function exportData() {
+  const data = { version: 1, exportedAt: new Date().toISOString(), cases: S.cases };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `casos-estudio-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(`📤 ${S.cases.length} casos exportados`);
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = ''; // reset so same file can be re-imported
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      const incoming = Array.isArray(data) ? data : (data.cases || []);
+      if (!incoming.length) throw new Error('No se encontraron casos en el archivo');
+      const news = incoming.filter(c => !S.cases.find(x => x.id === c.id));
+      const updates = incoming.filter(c =>  S.cases.find(x => x.id === c.id));
+      const msg = [
+        news.length    ? `${news.length} nuevos` : '',
+        updates.length ? `${updates.length} actualizados` : '',
+      ].filter(Boolean).join(', ');
+      showModal({
+        title: '📥 Importar datos',
+        body: `Se importarán <strong>${incoming.length} casos</strong> (${msg}). Los existentes se actualizarán.`,
+        confirmLabel: 'Importar',
+        onConfirm: () => {
+          incoming.forEach(c => {
+            const idx = S.cases.findIndex(x => x.id === c.id);
+            if (idx >= 0) S.cases[idx] = c; else S.cases.push(c);
+          });
+          persist();
+          if (db) {
+            const batch = db.batch();
+            incoming.forEach(c => batch.set(db.collection('cases').doc(c.id), c));
+            batch.commit().catch(e => console.warn('Import Firestore batch error:', e));
+          }
+          toast(`✅ Importación completada: ${msg}`);
+          render();
+        }
+      });
+    } catch(err) {
+      toast('❌ Error: ' + err.message, 'err');
+    }
+  };
+  r.readAsText(file);
+}
+
+// ── Admin helpers ─────────────────────────────────────────────────
+function adminSaveStatus(c) {
+  const idx = S.cases.findIndex(x => x.id === c.id);
+  if (idx >= 0) S.cases[idx] = c; else S.cases.unshift(c);
+  persist(); firestoreSave(c);
+}
+
+// Desbloquear edición (admin)
+function adminUnlock() {
+  withAdminPin(() => {
+    S.adminMode = true;
+    toast('🔓 Modo administrador activado');
+    render();
+  });
+}
+function exitAdminMode() { S.adminMode = false; render(); }
+
+// Publicar: pending/discarded → published
+function adminPublish() {
+  const asset = esc(S.editing.asset || 'sin título');
+  withAdminPin(() => {
+    showModal({
+      title: '✅ Publicar caso',
+      body: `¿Publicar <strong>${asset}</strong> en la Base de Datos? Será visible para toda la comunidad.`,
+      confirmLabel: 'Publicar',
+      onConfirm: () => {
+        const c = S.editing;
+        c.status = 'published'; c.validated = true;
+        c.validatedAt = new Date().toISOString();
+        adminSaveStatus(c);
+        S.adminMode = false; S.view = 'list'; S.listTab = 'db'; S.editing = null;
+        toast('✅ Caso publicado en la Base de Datos'); render();
+      }
+    });
+  });
+}
+
+// Descartar: published/pending → discarded (requiere motivo)
+function adminDiscard() {
+  const asset = esc(S.editing.asset || 'sin título');
+  withAdminPin(() => {
+    showModal({
+      title: '❌ Descartar caso',
+      body: `Indica el motivo para descartar <strong>${asset}</strong>:`,
+      inputType: 'text',
+      inputLabel: 'Motivo del descarte',
+      placeholder: 'Ej: No cumple criterios de riesgo...',
+      confirmLabel: 'Descartar',
+      danger: true,
+      onConfirm: reason => {
+        const c = S.editing;
+        c.status = 'discarded'; c.validated = false;
+        c.discardReason = reason;
+        c.discardedAt = new Date().toISOString();
+        adminSaveStatus(c);
+        S.adminMode = false; S.view = 'list'; S.listTab = 'discarded'; S.editing = null;
+        toast('🗑 Caso descartado'); render();
+      }
+    });
+  });
+}
+
+// Mover a Pte. Validación
+function adminMoveToPending() {
+  const asset = esc(S.editing.asset || 'sin título');
+  withAdminPin(() => {
+    showModal({
+      title: '⬅ Mover a Pte. Validación',
+      body: `¿Devolver <strong>${asset}</strong> a la lista de Pendiente de Validación?`,
+      confirmLabel: 'Mover',
+      onConfirm: () => {
+        const c = S.editing;
+        c.status = 'pending'; c.validated = false;
+        adminSaveStatus(c);
+        S.adminMode = false; S.view = 'list'; S.listTab = 'pending'; S.editing = null;
+        toast('⬅ Caso movido a Pte. Validación'); render();
+      }
+    });
+  });
+}
+
+// Eliminar definitivamente
+function adminDelete() {
+  const asset = esc(S.editing.asset || 'sin título');
+  withAdminPin(() => {
+    showModal({
+      title: '🗑 Eliminar definitivamente',
+      body: `¿Eliminar <strong>${asset}</strong>? Esta acción <strong>no se puede deshacer</strong>.`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+      onConfirm: () => {
+        const id = S.editing.id;
+        S.cases = S.cases.filter(x => x.id !== id);
+        persist(); firestoreDelete(id);
+        S.adminMode = false; S.view = 'list'; S.editing = null;
+        toast('🗑 Caso eliminado definitivamente'); render();
+      }
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  ACTIONS – IMAGE
+// ══════════════════════════════════════════════════════════════════
+function handleImg(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = async ev => {
+    const compressed = await compressImage(ev.target.result);
+    S.editing.image = compressed;
+    const z = document.getElementById('drop-zone');
+    if (z) z.innerHTML = `<img src="${compressed}" alt="gráfico" data-action="zoom-img" style="cursor:zoom-in">
+      <p style="margin-top:8px;color:var(--muted);font-size:12px">Click en la imagen para ampliar · Click fuera para cambiar</p>`;
+  };
+  r.readAsDataURL(file);
+}
+function removeImg() { S.editing.image = null; render(); }
+
+function openLightbox(src) {
+  const lb = document.createElement('div');
+  lb.className = 'lightbox';
+  lb.innerHTML = `<span class="lightbox-close">✕</span><img src="${src}" alt="gráfico ampliado">`;
+  lb.addEventListener('click', () => lb.remove());
+  document.body.appendChild(lb);
+}
+
+// Compress image to keep Firestore documents small (<900 KB)
+function compressImage(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onerror = () => resolve(dataUrl);
+    img.onload = () => {
+      const MAX = 1400;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(cv.toDataURL('image/jpeg', 0.78));
+    };
+    img.src = dataUrl;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  ACTIONS – OPERATIONS
+// ══════════════════════════════════════════════════════════════════
+function addOp(type) {
+  if (!S.editing) return;
+  S.editing.operations = S.editing.operations || [];
+  S.editing.operations.push({ id:uid(), type, date:'', price:'', sl:'', sharesCalc:null, shares:'', notes:'' });
+  refreshOps();
+}
+function updateOpField(opId, field, value) {
+  const op = S.editing.operations.find(o => o.id === opId);
+  if (!op) return; op[field] = value; refreshOps();
+}
+function deleteOp(opId) {
+  if (!S.editing) return;
+  S.editing.operations = S.editing.operations.filter(o => o.id !== opId);
+  refreshOps();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  ACTIONS – ENTRY CALC
+// ══════════════════════════════════════════════════════════════════
+function onEntryChange() {
+  const price = parseFloat(document.getElementById('f-entry-price')?.value);
+  const sl    = parseFloat(document.getElementById('f-entry-sl')?.value);
+  const acc   = parseFloat(document.getElementById('f-account')?.value) || 10000;
+  const calcEl = document.getElementById('f-shares-calc');
+  const hintEl = document.getElementById('entry-hint');
+  if (price > 0 && sl > 0) {
+    const calc = sharesFormula(acc, price, sl);
+    if (calcEl) calcEl.value = num(calc, 3);
+    if (hintEl) { hintEl.style.display='block'; hintEl.textContent=sharesHintText(acc,price,sl); }
+    if (S.editing) S.editing.entrySharesCalc = calc;
+    const sharesEl = document.getElementById('f-entry-shares');
+    if (sharesEl && !sharesEl.value) sharesEl.placeholder = `Sugerido: ${Math.floor(calc)} acc.`;
+  } else {
+    if (calcEl) calcEl.value = '—';
+    if (hintEl) hintEl.style.display = 'none';
+  }
+}
+function onAccountChange() { onEntryChange(); }
+
+// ══════════════════════════════════════════════════════════════════
+//  RENDER ROUTER
+// ══════════════════════════════════════════════════════════════════
+function render() {
+  if (S.view === 'list') renderList();
+  else if (S.view === 'form') renderForm();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  EVENT DELEGATION
+// ══════════════════════════════════════════════════════════════════
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  if (el.dataset.stop) e.stopPropagation();
+  const action = el.dataset.action, id = el.dataset.id||'', param = el.dataset.param||'';
+  switch (action) {
+    case 'new-case':    newCase(); break;
+    case 'open-case':   if(id) openCase(id); break;
+    case 'go-back':     goBack(); break;
+    case 'save-case':   saveCase(); break;
+    case 'delete-case': deleteCase(); break;
+    case 'add-op':      addOp(param); break;
+    case 'delete-op':   e.stopPropagation(); deleteOp(id); break;
+    case 'toggle-view': toggleView(); break;
+    case 'remove-img':  e.stopPropagation(); removeImg(); break;
+    case 'pick-img':    document.getElementById('img-input')?.click(); break;
+    case 'sort':        if(id) setSort(id); break;
+    case 'set-tab':     if(id) setListTab(id); break;
+    case 'admin-unlock':          adminUnlock(); break;
+    case 'exit-admin-mode':       exitAdminMode(); break;
+    case 'admin-publish':         adminPublish(); break;
+    case 'admin-discard':         adminDiscard(); break;
+    case 'admin-move-to-pending': adminMoveToPending(); break;
+    case 'admin-delete':          adminDelete(); break;
+    case 'export':       exportData(); break;
+    case 'import-pick':  document.getElementById('import-input')?.click(); break;
+    case 'zoom-img':     e.stopPropagation(); if(el.src) openLightbox(el.src); break;
+  }
+});
+
+document.addEventListener('change', function(e) {
+  const el = e.target, action = el.dataset.action, id = el.dataset.id||'';
+  if (!action) return;
+  switch (action) {
+    case 'filter-timeframe':  filterSet('timeframe', el.value); break;
+    case 'filter-year':       filterSet('year', el.value); break;
+    case 'save-author':       saveDefaultAuthor(el.value); break;
+    case 'update-op-date':    updateOpField(id, 'date', el.value); break;
+    case 'update-op-price':   updateOpField(id, 'price', el.value); break;
+    case 'update-op-shares':  updateOpField(id, 'shares', el.value); break;
+    case 'img-upload':        handleImg({target:el}); break;
+    case 'import-file':       importData({target:el}); break;
+  }
+});
+
+document.addEventListener('input', function(e) {
+  const el = e.target, action = el.dataset.action;
+  if (!action) return;
+  switch (action) {
+    case 'filter-search':  filterSearch(el.value); break;
+    case 'entry-change':   onEntryChange(); break;
+    case 'account-change': onAccountChange(); break;
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════════
+S.cases = load();
+
+if (!S.cases.length) {
+  S.cases = [
+    // ── 2022 ──────────────────────────────────────────────────────
+    {
+      id:uid(), createdAt:'2022-07-15T08:00:00.000Z', updatedAt:'2022-10-25T17:00:00.000Z',
+      authorName:'Javier', asset:'AMZN', accountSize:10000, timeframe:'semanal',
+      notes:'Rebote técnico desde mínimos anuales. Ventas AWS acelerando pese a macro adversa. Setup poco limpio pero asimétrico.',
+      entryDate:'2022-07-15', entryPrice:115, entrySL:105, entryShares:10, entrySharesCalc:10, image:null,
+      operations:[
+        {id:uid(),type:'final_exit',date:'2022-10-25',price:120,shares:10,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2022-08-10T09:30:00.000Z', updatedAt:'2022-10-05T14:00:00.000Z',
+      authorName:'María', asset:'GOOGL', accountSize:10000, timeframe:'semanal',
+      notes:'Intento de rebote tras caída del 40%. Soporte no aguantó. El mercado bajista penalizó las compañías de publicidad digital.',
+      entryDate:'2022-08-10', entryPrice:120, entrySL:108, entryShares:8, entrySharesCalc:8.33, image:null,
+      operations:[
+        {id:uid(),type:'final_exit',date:'2022-10-05',price:103,shares:8,notes:''},
+      ]
+    },
+    // ── 2023 ──────────────────────────────────────────────────────
+    {
+      id:uid(), createdAt:'2023-01-15T08:00:00.000Z', updatedAt:'2023-11-20T16:00:00.000Z',
+      authorName:'María', asset:'SOL', accountSize:50000, timeframe:'semanal',
+      notes:'Acumulación post-FTX. Setup de rebote desde zona de máximo pánico. Catalizador: aprobación ETF Bitcoin y narrativa DeFi. Operación de alto riesgo/recompensa.',
+      entryDate:'2023-01-15', entryPrice:15, entrySL:12, entryShares:160, entrySharesCalc:166, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2023-04-10',price:25, shares:80, notes:''},
+        {id:uid(),type:'add',         date:'2023-05-15',price:22, shares:60, notes:''},
+        {id:uid(),type:'final_exit',  date:'2023-11-20',price:55, shares:140,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2023-03-15T09:00:00.000Z', updatedAt:'2023-09-10T15:00:00.000Z',
+      authorName:'María', asset:'MSFT', accountSize:10000, timeframe:'semanal',
+      notes:'Integración de IA en toda la suite Office como driver de reaceleración de ingresos. Copilot como producto diferencial. Ruptura de resistencia en semanal con volumen.',
+      entryDate:'2023-03-15', entryPrice:280, entrySL:260, entryShares:5, entrySharesCalc:5, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2023-06-20',price:340,shares:2.5,notes:''},
+        {id:uid(),type:'final_exit',  date:'2023-09-10',price:320,shares:2.5,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2023-05-10T08:45:00.000Z', updatedAt:'2023-10-15T16:30:00.000Z',
+      authorName:'Carlos', asset:'AMD', accountSize:10000, timeframe:'diaria',
+      notes:'Lanzamiento MI300X como competidor directo de NVDA en aceleradores IA. El mercado tardó en ponerle precio. Entrada en ruptura de canal bajista diario.',
+      entryDate:'2023-05-10', entryPrice:90, entrySL:80, entryShares:10, entrySharesCalc:10, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2023-07-05',price:120,shares:5,  notes:''},
+        {id:uid(),type:'add',         date:'2023-08-01',price:115,shares:4,  notes:''},
+        {id:uid(),type:'final_exit',  date:'2023-10-15',price:140,shares:9,  notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2023-06-20T09:00:00.000Z', updatedAt:'2023-10-01T15:00:00.000Z',
+      authorName:'Gloria', asset:'COIN', accountSize:10000, timeframe:'diaria',
+      notes:'Recuperación del ecosistema crypto post-FTX. COIN como proxy regulado del sector. Setup de bandera alcista en diario con volumen decreciente en corrección.',
+      entryDate:'2023-06-20', entryPrice:55, entrySL:48, entryShares:14, entrySharesCalc:14.28, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2023-08-15',price:85,shares:7,notes:''},
+        {id:uid(),type:'final_exit',  date:'2023-10-01',price:75,shares:7,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2023-11-10T09:00:00.000Z', updatedAt:'2024-04-05T10:00:00.000Z',
+      authorName:'Gloria', asset:'META', accountSize:10000, timeframe:'semanal',
+      notes:'Año de la eficiencia de Zuckerberg. IA generativa como nuevo driver de ingresos publicitarios. Setup semanal limpio tras corrección del 70%.',
+      entryDate:'2023-11-10', entryPrice:310, entrySL:280, entryShares:3, entrySharesCalc:3.33, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2024-01-15',price:450,shares:1.5,notes:''},
+        {id:uid(),type:'add',         date:'2024-02-20',price:480,shares:1,  notes:''},
+        {id:uid(),type:'final_exit',  date:'2024-04-05',price:520,shares:2.5,notes:''},
+      ]
+    },
+    // ── 2024 ──────────────────────────────────────────────────────
+    {
+      id:uid(), createdAt:'2024-01-10T08:00:00.000Z', updatedAt:'2024-05-20T16:00:00.000Z',
+      authorName:'Javier', asset:'ETH', accountSize:10000, timeframe:'semanal',
+      notes:'ETF spot de ETH en el horizonte. Narrativa de "ultrasound money" post-merge. Entrada en consolidación semanal sobre MM200. Riesgo regulatorio como principal amenaza.',
+      entryDate:'2024-01-10', entryPrice:2200, entrySL:2000, entryShares:0.5, entrySharesCalc:0.5, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2024-03-15',price:3800,shares:0.25,notes:''},
+        {id:uid(),type:'final_exit',  date:'2024-05-20',price:3200,shares:0.25,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2024-01-15T08:30:00.000Z', updatedAt:'2024-06-15T15:00:00.000Z',
+      authorName:'Gloria', asset:'NVDA', accountSize:10000, timeframe:'semanal',
+      notes:'Ruptura tras consolidación de 3 meses. Volumen confirmando. Sector IA con momentum fuerte. H100 en backlog de 12 meses.',
+      entryDate:'2024-01-15', entryPrice:480, entrySL:440, entryShares:2, entrySharesCalc:2.5, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2024-03-20',price:890, shares:1,notes:''},
+        {id:uid(),type:'add',         date:'2024-04-10',price:950, shares:1,notes:''},
+        {id:uid(),type:'final_exit',  date:'2024-06-15',price:1100,shares:2,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2024-01-20T09:00:00.000Z', updatedAt:'2024-04-20T14:00:00.000Z',
+      authorName:'Carlos', asset:'SMCI', accountSize:10000, timeframe:'semanal',
+      notes:'Servidor de IA como pico y pala del boom. SMCI con márgenes en expansión y backlog récord. Entrada agresiva en ruptura mensual. Salida antes de problemas contables.',
+      entryDate:'2024-01-20', entryPrice:350, entrySL:300, entryShares:2, entrySharesCalc:2, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2024-03-10',price:900,shares:1,notes:''},
+        {id:uid(),type:'final_exit',  date:'2024-04-20',price:700,shares:1,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2024-02-15T09:00:00.000Z', updatedAt:'2024-06-30T16:00:00.000Z',
+      authorName:'Javier', asset:'PLTR', accountSize:10000, timeframe:'diaria',
+      notes:'Contratos gubernamentales de IA acelerando. AIP (Artificial Intelligence Platform) como diferencial competitivo. Setup de ruptura diaria tras consolidación de 8 semanas.',
+      entryDate:'2024-02-15', entryPrice:18, entrySL:16, entryShares:50, entrySharesCalc:50, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2024-04-20',price:24,shares:25,notes:''},
+        {id:uid(),type:'final_exit',  date:'2024-06-30',price:28,shares:25,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2024-06-10T09:00:00.000Z', updatedAt:'2024-07-05T14:00:00.000Z',
+      authorName:'María', asset:'RKLB', accountSize:10000, timeframe:'diaria',
+      notes:'Nueva Space Economy. Contratos NASA y DoD. El timing fue incorrecto — anuncio de dilución pillando la posición abierta. Stop ejecutado sin piedad.',
+      entryDate:'2024-06-10', entryPrice:6, entrySL:5, entryShares:100, entrySharesCalc:100, image:null,
+      operations:[
+        {id:uid(),type:'final_exit',date:'2024-07-05',price:5,shares:100,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2024-07-20T10:00:00.000Z', updatedAt:'2024-08-10T16:00:00.000Z',
+      authorName:'Carlos', asset:'TSLA', accountSize:10000, timeframe:'diaria',
+      notes:'Intento de entrada en soporte. Stop activado por noticias negativas de producción inesperadas. Error de timing en mercado sin tendencia.',
+      entryDate:'2024-07-20', entryPrice:250, entrySL:230, entryShares:4, entrySharesCalc:5, image:null,
+      operations:[
+        {id:uid(),type:'final_exit',date:'2024-08-10',price:225,shares:4,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2024-08-20T09:00:00.000Z', updatedAt:'2024-12-10T17:00:00.000Z',
+      authorName:'Javier', asset:'APP', accountSize:10000, timeframe:'diaria',
+      notes:'AppLovin reacelerando ingresos con IA aplicada a publicidad móvil. AXON 2.0 cambiando el modelo de negocio. Ignorada por el mercado hasta Q3 earnings.',
+      entryDate:'2024-08-20', entryPrice:85, entrySL:76, entryShares:11, entrySharesCalc:11.11, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2024-10-15',price:130,shares:5.5,notes:''},
+        {id:uid(),type:'final_exit',  date:'2024-12-10',price:160,shares:5.5,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2024-09-15T09:00:00.000Z', updatedAt:'2024-12-15T16:00:00.000Z',
+      authorName:'Gloria', asset:'MSTR', accountSize:10000, timeframe:'semanal',
+      notes:'Proxy de Bitcoin con apalancamiento. Estrategia de acumulación BTC de Saylor como activo de reserva corporativo. Operación de alta convicción post-halving.',
+      entryDate:'2024-09-15', entryPrice:140, entrySL:120, entryShares:5, entrySharesCalc:5, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2024-11-10',price:280,shares:2.5,notes:''},
+        {id:uid(),type:'add',         date:'2024-11-20',price:300,shares:2,  notes:''},
+        {id:uid(),type:'final_exit',  date:'2024-12-15',price:380,shares:4.5,notes:''},
+      ]
+    },
+    // ── En seguimiento (no validados) ─────────────────────────────
+    {
+      id:uid(), createdAt:'2024-09-05T09:15:00.000Z', updatedAt:'2024-10-12T11:00:00.000Z',
+      authorName:'Carlos', asset:'AAPL', accountSize:10000, timeframe:'diaria',
+      notes:'Rebote en soporte clave tras corrección del 15%. RSI oversold en diario. Esperando catalyst de producto.',
+      entryDate:'2024-09-05', entryPrice:220, entrySL:205, entryShares:6, entrySharesCalc:6.67, image:null,
+      operations:[
+        {id:uid(),type:'partial_exit',date:'2024-10-12',price:235,shares:3,notes:''},
+      ]
+    },
+    {
+      id:uid(), createdAt:'2024-11-01T08:00:00.000Z', updatedAt:'2024-11-01T08:00:00.000Z',
+      authorName:'María', asset:'BTC', accountSize:50000, timeframe:'semanal',
+      notes:'Ruptura del rango lateral de 6 semanas. ETF spot aprobado como catalizador. Posición abierta en seguimiento.',
+      entryDate:'2024-11-01', entryPrice:68000, entrySL:62000, entryShares:0.08, entrySharesCalc:0.083, image:null,
+      operations:[]
+    },
+  ];
+  // Asignar status inicial a los datos de demo
+  S.cases.forEach(c => {
+    if (!c.status) c.status = isClosed(c) ? 'published' : 'open';
+  });
+  persist();
+}
+
+// Migrar casos pre-existentes en localStorage al nuevo campo status
+S.cases.forEach(c => {
+  if (!c.status) {
+    if (c.validated === true) c.status = 'published';
+    else if (isClosed(c))    c.status = 'pending';
+    else                      c.status = 'open';
+  }
+});
+
+render();
+
+// Init Firebase after first render (so UI is visible immediately from localStorage)
+window.addEventListener('load', initFirebase);
+</script>
+</body>
+</html>
