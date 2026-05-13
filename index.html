@@ -235,7 +235,7 @@ select option { background: var(--surface); }
 @keyframes toastin { from { transform: translateX(110%); opacity:0; } to { transform:none; opacity:1; } }
 
 /* ── Date picker ─────────────────────────────────────────────────── */
-input[type="date"] { color-scheme: light; }
+input[type="date"] { color-scheme: dark; }
 
 /* ── Lightbox ────────────────────────────────────────────────────── */
 .lightbox {
@@ -623,6 +623,16 @@ function calcRR(c) {
   if (!risk) return null;
   return pos.realizedPnL / risk;
 }
+function calcAssetReturn(c) {
+  const exits = (c.operations||[]).filter(o =>
+    (o.type==='partial_exit'||o.type==='final_exit') && +o.price>0 && +o.shares>0);
+  if (!exits.length || !(+c.entryPrice > 0)) return null;
+  const totalProceeds = exits.reduce((s,o) => s + (+o.price)*(+o.shares), 0);
+  const totalShares   = exits.reduce((s,o) => s + (+o.shares), 0);
+  const avgExit = totalProceeds / totalShares;
+  return (avgExit - +c.entryPrice) / +c.entryPrice * 100;
+}
+
 function fmtRR(rr) {
   if (rr == null || isNaN(rr)) return '—';
   return (rr >= 0 ? '+' : '−') + Math.abs(rr).toFixed(2) + ' R';
@@ -961,6 +971,9 @@ function renderFilteredList() {
 
 function renderCard(c) {
   const pos = positionState(c), rr = calcRR(c);
+  const account   = c.accountSize || 10000;
+  const pnlPct    = pos.realizedPnL / account * 100;
+  const assetPct  = calcAssetReturn(c);
   const imgHTML = c.image
     ? `<img class="cc-img" src="${c.image}" alt="${esc(c.asset)}">`
     : `<div class="cc-no-img">📊</div>`;
@@ -987,9 +1000,13 @@ function renderCard(c) {
             <span class="mini-val ${rr!=null?cls(rr):''}">${fmtRR(rr)}</span>
           </div>
           <div class="mini-stat">
-            <span class="mini-label">P&amp;G</span>
-            <span class="mini-val ${cls(pos.realizedPnL)}">${eur(pos.realizedPnL)}</span>
+            <span class="mini-label">% Cartera</span>
+            <span class="mini-val ${pnlPct?cls(pnlPct):''}">${pct(pnlPct)}</span>
           </div>
+          ${assetPct!=null?`<div class="mini-stat">
+            <span class="mini-label">% Activo</span>
+            <span class="mini-val ${cls(assetPct)}">${pct(assetPct)}</span>
+          </div>`:''}
         </div>
       </div>
     </div>`;
@@ -1205,7 +1222,7 @@ function renderForm() {
 
     <!-- RESUMEN -->
     <div class="section" id="summary-section">
-      <div class="sec-title">📈 Resumen P&amp;G</div>
+      <div class="sec-title">📈 Resumen del Caso</div>
       <div id="summary-box">${renderSummary(c, pos)}</div>
     </div>
   `;
@@ -1234,7 +1251,8 @@ function posTrackerHTML(pos, c) {
   return `
     <div class="pt-item"><span class="pt-label">Acciones en posición</span><span class="pt-val">${num(pos.totalShares,2)}</span></div>
     <div class="pt-item"><span class="pt-label">Precio Medio</span><span class="pt-val">${pos.avgCost?eur(pos.avgCost,false):'—'}</span></div>
-    <div class="pt-item"><span class="pt-label">P&amp;G Realizado</span><span class="pt-val ${cls(pos.realizedPnL)}">${eur(pos.realizedPnL)}</span></div>
+    ${(()=>{ const acc=c?.accountSize||10000, pp=pos.realizedPnL/acc*100;
+      return `<div class="pt-item"><span class="pt-label">% Cartera</span><span class="pt-val ${cls(pos.realizedPnL)}">${pct(pp)}</span></div>`; })()}
     <div class="pt-item"><span class="pt-label">Ratio R:R</span><span class="pt-val ${rr!=null?cls(rr):''}">${fmtRR(rr)}</span></div>
     ${risk!=null?`<div class="pt-item"><span class="pt-label">Riesgo Inicial (1R)</span><span class="pt-val" style="color:var(--red)">${eur(risk,false)}</span></div>`:''}`;
 }
@@ -1313,6 +1331,7 @@ function renderSummary(c, pos) {
   const hasFinal = ops.some(o=>o.type==='final_exit');
   const invested = (+c.entryPrice||0)*(+c.entryShares||0) + adds.reduce((s,a)=>s+(+a.price||0)*(+a.shares||0),0);
   const account = c.accountSize??10000, pnlPct = pos.realizedPnL/account*100;
+  const assetPct = calcAssetReturn(c);
   const ir = calcInitialRisk(c), rr = calcRR(c);
 
   return `
@@ -1327,10 +1346,15 @@ function renderSummary(c, pos) {
         ${ir!=null?`<span class="sum-sub">Riesgo inicial (1R): ${eur(ir,false)}</span>`:''}
       </div>
       <div class="sum-stat">
-        <span class="sum-label">P&amp;G Total Realizado</span>
-        <span class="sum-val ${cls(pos.realizedPnL)}">${eur(pos.realizedPnL)}</span>
-        <span class="sum-sub">${pct(pnlPct)} sobre cuenta (${eur(account,false)})</span>
+        <span class="sum-label">% Rentabilidad Cartera</span>
+        <span class="sum-val ${cls(pos.realizedPnL)}" style="font-size:26px">${pct(pnlPct)}</span>
+        <span class="sum-sub">sobre cuenta de ${eur(account,false)}</span>
       </div>
+      ${assetPct!=null?`<div class="sum-stat">
+        <span class="sum-label">% Rentabilidad Activo</span>
+        <span class="sum-val ${cls(assetPct)}" style="font-size:26px">${pct(assetPct)}</span>
+        <span class="sum-sub">desde entrada hasta salida ponderada</span>
+      </div>`:''}
       <div class="sum-stat">
         <span class="sum-label">Capital Invertido</span>
         <span class="sum-val neu" style="font-size:17px">${eur(invested,false)}</span>
@@ -1726,7 +1750,10 @@ document.addEventListener('change', function(e) {
     case 'filter-timeframe':  filterSet('timeframe', el.value); break;
     case 'filter-year':       filterSet('year', el.value); break;
     case 'save-author':       saveDefaultAuthor(el.value); break;
-    case 'update-op-date':    updateOpField(id, 'date', el.value); break;
+    case 'update-op-date':
+      { const op = S.editing?.operations?.find(o => o.id === id);
+        if (op) op.date = el.value; }
+      break;
     case 'update-op-price':   updateOpField(id, 'price', el.value); break;
     case 'update-op-shares':  updateOpField(id, 'shares', el.value); break;
     case 'img-upload':        handleImg({target:el}); break;
