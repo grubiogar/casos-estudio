@@ -1015,6 +1015,10 @@ function renderCard(c) {
 function renderTable(cases) {
   const rows = cases.map(c => {
     const rr = calcRR(c);
+    const pos = positionState(c);
+    const account = c.accountSize || 10000;
+    const pnlPct  = pos.realizedPnL / account * 100;
+    const assetPct = calcAssetReturn(c);
     return `
       <tr data-action="open-case" data-id="${c.id}">
         <td>${(c.entryDate||'').substring(0,4)||'—'}</td>
@@ -1022,6 +1026,8 @@ function renderTable(cases) {
         <td>${fmtDate(c.entryDate)}</td>
         <td><span class="badge b-blue">${c.timeframe==='semanal'?'Semanal':'Diario'}</span></td>
         <td class="${rr!=null?cls(rr):''}" style="font-weight:800;font-size:15px">${fmtRR(rr)}</td>
+        <td class="${cls(pnlPct)}" style="font-weight:700">${pct(pnlPct)}</td>
+        <td class="${assetPct!=null?cls(assetPct):''}" style="font-weight:700">${assetPct!=null?pct(assetPct):'—'}</td>
         <td>${esc(c.authorName)||'<span style="color:var(--muted)">—</span>'}</td>
         <td>${fmtDate(c.createdAt)}</td>
         <td><button class="btn btn-ghost btn-xs" data-action="open-case" data-id="${c.id}" data-stop="1">Ver →</button></td>
@@ -1036,6 +1042,8 @@ function renderTable(cases) {
         <th>Fecha Entrada</th>
         <th>Temporalidad</th>
         ${sortTh('rr','Ratio R:R')}
+        <th>% Cartera</th>
+        <th>% Activo</th>
         ${sortTh('author','Autor')}
         ${sortTh('created','Fecha Creación')}
         <th></th>
