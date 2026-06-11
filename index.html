@@ -477,6 +477,7 @@ function setupSync() {
         else if (isClosed(c))    c.status = 'pending';
         else                      c.status = 'open';
       }
+      if (c.durationDays == null) c.durationDays = calcDuration(c);
     });
     persistLocal();
     if (S.view === 'list') render();
@@ -638,6 +639,31 @@ function fmtRR(rr) {
   return (rr >= 0 ? '+' : '−') + Math.abs(rr).toFixed(2) + ' R';
 }
 
+// ── Duración de la operación ──────────────────────────────────────
+function caseExitDate(c) {
+  const fin = (c.operations || []).find(o => o.type === 'final_exit' && o.date);
+  return fin ? fin.date : null;
+}
+function daysBetween(a, b) {
+  const d1 = new Date(a + 'T00:00:00'), d2 = new Date(b + 'T00:00:00');
+  if (isNaN(d1) || isNaN(d2)) return null;
+  return Math.round((d2 - d1) / 86400000);
+}
+function todayISO() {
+  const t = new Date();
+  return t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
+}
+// Días desde la entrada hasta la salida final (null si el caso sigue abierto o faltan fechas)
+function calcDuration(c) {
+  if (!c.entryDate) return null;
+  const end = caseExitDate(c);
+  return end ? daysBetween(c.entryDate, end) : null;
+}
+function fmtDays(d) {
+  if (d == null || isNaN(d)) return '—';
+  return d + (d === 1 ? ' día' : ' días');
+}
+
 function positionState(c, upTo = Infinity) {
   let lots = [], realized = 0;
   if (parseFloat(c.entryPrice) > 0 && parseFloat(c.entryShares) > 0)
@@ -705,6 +731,7 @@ function applyFiltersSort(cases) {
       case 'author':  va = (a.authorName||'').toLowerCase(); vb = (b.authorName||'').toLowerCase(); break;
       case 'entry':   va = a.entryDate||''; vb = b.entryDate||''; break;
       case 'rr':      va = calcRR(a) ?? -Infinity; vb = calcRR(b) ?? -Infinity; break;
+      case 'duration': va = calcDuration(a) ?? -Infinity; vb = calcDuration(b) ?? -Infinity; break;
       default:        va = a.entryDate||''; vb = b.entryDate||'';
     }
     return va < vb ? dir : va > vb ? -dir : 0;
@@ -970,7 +997,7 @@ function renderFilteredList() {
 }
 
 function renderCard(c) {
-  const pos = positionState(c), rr = calcRR(c);
+  const pos = positionState(c), rr = calcRR(c), dur = calcDuration(c);
   const account   = c.accountSize || 10000;
   const pnlPct    = pos.realizedPnL / account * 100;
   const assetPct  = calcAssetReturn(c);
@@ -995,6 +1022,10 @@ function renderCard(c) {
             <span class="mini-label">Entrada</span>
             <span class="mini-val" style="font-size:12px">${fmtDate(c.entryDate)}</span>
           </div>
+          ${dur!=null?`<div class="mini-stat">
+            <span class="mini-label">Duración</span>
+            <span class="mini-val" style="font-size:12px">${fmtDays(dur)}</span>
+          </div>`:''}
           <div class="mini-stat">
             <span class="mini-label">R:R</span>
             <span class="mini-val ${rr!=null?cls(rr):''}">${fmtRR(rr)}</span>
@@ -1024,6 +1055,7 @@ function renderTable(cases) {
         <td>${(c.entryDate||'').substring(0,4)||'—'}</td>
         <td><strong>${esc(c.asset)||'—'}</strong></td>
         <td>${fmtDate(c.entryDate)}</td>
+        <td>${fmtDays(calcDuration(c))}</td>
         <td><span class="badge b-blue">${c.timeframe==='semanal'?'Semanal':'Diario'}</span></td>
         <td class="${rr!=null?cls(rr):''}" style="font-weight:800;font-size:15px">${fmtRR(rr)}</td>
         <td class="${cls(pnlPct)}" style="font-weight:700">${pct(pnlPct)}</td>
@@ -1040,6 +1072,7 @@ function renderTable(cases) {
         ${sortTh('entry','Año / Fecha Entrada')}
         ${sortTh('asset','Activo')}
         <th>Fecha Entrada</th>
+        ${sortTh('duration','Duración')}
         <th>Temporalidad</th>
         ${sortTh('rr','Ratio R:R')}
         <th>% Cartera</th>
@@ -1342,12 +1375,18 @@ function renderSummary(c, pos) {
   const account = c.accountSize??10000, pnlPct = pos.realizedPnL/account*100;
   const assetPct = calcAssetReturn(c);
   const ir = calcInitialRisk(c), rr = calcRR(c);
+  const dur = hasFinal ? calcDuration(c) : (c.entryDate ? daysBetween(c.entryDate, todayISO()) : null);
 
   return `
     <div class="summary-grid">
       <div class="sum-stat">
         <span class="sum-label">Estado</span>
         <span class="sum-val" style="font-size:16px">${hasFinal?'🔴 Cerrado':'🟢 Abierto'}</span>
+      </div>
+      <div class="sum-stat">
+        <span class="sum-label">Duración</span>
+        <span class="sum-val neu" style="font-size:17px">${fmtDays(dur)}</span>
+        <span class="sum-sub">${hasFinal?'desde entrada hasta salida final':dur!=null?'en curso, desde la entrada hasta hoy':''}</span>
       </div>
       <div class="sum-stat">
         <span class="sum-label">Ratio R:R Total</span>
@@ -1425,6 +1464,7 @@ function collectFormValues() {
   c.entrySL     = parseFloat(document.getElementById('f-entry-sl')?.value) || '';
   c.entryShares = parseFloat(document.getElementById('f-entry-shares')?.value) || '';
   c.updatedAt   = new Date().toISOString();
+  c.durationDays = calcDuration(c);
   if (c.entryPrice && c.entrySL)
     c.entrySharesCalc = sharesFormula(c.accountSize, c.entryPrice, c.entrySL);
 }
@@ -1994,6 +2034,7 @@ S.cases.forEach(c => {
     else if (isClosed(c))    c.status = 'pending';
     else                      c.status = 'open';
   }
+  if (c.durationDays == null) c.durationDays = calcDuration(c);
 });
 
 render();
