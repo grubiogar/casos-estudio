@@ -404,14 +404,17 @@ function load()         { try { return JSON.parse(localStorage.getItem(KEY)) || 
 // localStorage es solo una caché de arranque: Firestore es la fuente de verdad.
 // Nunca debe lanzar — si la cuota (~5 MB) se llena, degrada en vez de romper el guardado.
 function persistLocal() {
+  // Las imágenes completas nunca van a la caché local: se piden a Firestore
+  // al abrir cada caso. Guardarlas aquí es lo que llenaba la cuota.
+  const sinImagenes = S.cases.map(({ image, ...resto }) => resto);
   try {
-    localStorage.setItem(KEY, JSON.stringify(S.cases));
+    localStorage.setItem(KEY, JSON.stringify(sinImagenes));
     return true;
   } catch (e) {
-    // Nivel 2: guardar sin imágenes (se recuperan de Firestore al recargar)
+    // Nivel 2: soltar también las miniaturas
     try {
-      localStorage.setItem(KEY, JSON.stringify(S.cases.map(c => ({ ...c, image: null }))));
-      console.warn('localStorage lleno: caché guardada sin imágenes.', e);
+      localStorage.setItem(KEY, JSON.stringify(sinImagenes.map(c => ({ ...c, thumb: null }))));
+      console.warn('localStorage lleno: caché guardada sin miniaturas.', e);
       return true;
     } catch (e2) {
       // Nivel 3: rendirse sin romper nada — los datos ya van a Firestore
@@ -426,17 +429,78 @@ function getDefaultAuthor()  { return localStorage.getItem(AUTHOR_KEY) || ''; }
 function saveDefaultAuthor(n){ if (n && n.trim()) localStorage.setItem(AUTHOR_KEY, n.trim()); }
 
 // ── Firebase helpers ──────────────────────────────────────────────
+// Las imágenes completas viven en la colección 'caseImages', una por caso,
+// para que la lista no tenga que descargarlas. En 'cases' solo va la
+// miniatura, que es lo que necesita la rejilla de fichas.
+const imgCache = {};   // id -> dataURL de la imagen completa ya descargada
+
 function firestoreSave(c) {
   if (!db) {
     // Sin conexión con la nube el caso solo vive en este navegador y puede perderse
     if (FIREBASE_READY) toast('⚠️ Sin conexión: el caso no se ha subido. No cierres sin reintentar.', 'err');
     return;
   }
-  db.collection('cases').doc(c.id).set(c)
+  // La imagen completa se separa del caso y se guarda aparte.
+  const { image, ...meta } = c;
+  db.collection('cases').doc(c.id).set(meta)
     .catch(e => {
       console.warn('Firestore save:', e);
       toast('⚠️ No se pudo subir el caso: ' + (e.message || e.code || 'error'), 'err');
     });
+  // undefined = el caso nunca cargó su imagen, así que no hay nada que tocar.
+  // null = el usuario la quitó, y eso sí hay que guardarlo.
+  if (image !== undefined) firestoreSaveImage(c.id, image);
+}
+
+function firestoreSaveImage(id, dataUrl) {
+  if (!db) return;
+  if (dataUrl) imgCache[id] = dataUrl; else delete imgCache[id];
+  db.collection('caseImages').doc(id).set({ image: dataUrl || null })
+    .catch(e => {
+      console.warn('Firestore save image:', e);
+      toast('⚠️ No se pudo subir la imagen: ' + (e.message || e.code || 'error'), 'err');
+    });
+}
+
+// Mueve a 'caseImages' las imágenes que todavía viajan dentro del caso y
+// les crea su miniatura. Se usa al importar y se puede lanzar a mano desde
+// la consola: migrarImagenes()
+// Escribe primero la imagen aparte y solo después la quita del caso, para
+// que en ningún momento pueda quedarse sin copia.
+async function migrarImagenes() {
+  if (!db) { console.warn('sin conexión con Firestore'); return { ok: 0, fallos: 0 }; }
+  const pendientes = S.cases.filter(c => c.image || !c.thumb);
+  console.log('casos por migrar:', pendientes.length);
+  let ok = 0, fallos = 0, sinImagen = 0;
+  for (const c of pendientes) {
+    try {
+      const full = c.image || await firestoreLoadImage(c.id);
+      if (!full) { sinImagen++; continue; }
+      const thumb = c.thumb || await makeThumb(full);
+      await db.collection('caseImages').doc(c.id).set({ image: full });
+      const { image, ...meta } = c;
+      meta.thumb = thumb;
+      await db.collection('cases').doc(c.id).set(meta);
+      imgCache[c.id] = full;
+      ok++;
+      console.log('migrado:', c.id, c.asset);
+    } catch (e) { fallos++; console.warn('fallo al migrar', c.id, e); }
+  }
+  console.log('migración terminada — ok:', ok, '| sin imagen:', sinImagen, '| fallos:', fallos);
+  return { ok, sinImagen, fallos };
+}
+
+// Descarga la imagen completa de un caso, solo cuando hace falta.
+function firestoreLoadImage(id) {
+  if (imgCache[id] !== undefined) return Promise.resolve(imgCache[id]);
+  if (!db) return Promise.resolve(null);
+  return db.collection('caseImages').doc(id).get()
+    .then(doc => {
+      const img = doc.exists ? (doc.data().image || null) : null;
+      imgCache[id] = img;
+      return img;
+    })
+    .catch(e => { console.warn('Firestore load image:', e); return null; });
 }
 // Sin uso: las reglas de Firestore prohiben el borrado para que nadie
 // pueda destruir casos. Se descarta (status 'discarded'), que es reversible.
@@ -478,15 +542,17 @@ function initFirebase() {
 function setupSync() {
   if (!db) return;
   let firstSnap = true;
+  // Solo metadatos y miniatura: las imagenes completas no viajan aqui.
   db.collection('cases').onSnapshot(snap => {
-    const localImg = {};
-    S.cases.forEach(c => { if (c.image) localImg[c.id] = c.image; });
 
     // Primera sincronización: si Firestore está vacío pero hay datos locales → subirlos
     if (firstSnap && snap.empty && S.cases.length > 0) {
       firstSnap = false;
       const batch = db.batch();
-      S.cases.forEach(c => batch.set(db.collection('cases').doc(c.id), c));
+      S.cases.forEach(c => {
+        const { image, ...meta } = c;
+        batch.set(db.collection('cases').doc(c.id), meta);
+      });
       batch.commit().catch(e => console.warn('Initial upload error:', e));
       updateSyncStatus('online');
       return;
@@ -494,11 +560,7 @@ function setupSync() {
     firstSnap = false;
 
     S.cases = [];
-    snap.forEach(doc => {
-      const c = { ...doc.data(), id: doc.id };
-      if (!c.image && localImg[c.id]) c.image = localImg[c.id];
-      S.cases.push(c);
-    });
+    snap.forEach(doc => S.cases.push({ ...doc.data(), id: doc.id }));
     S.cases.forEach(c => {
       if (!c.status) {
         if (c.validated === true) c.status = 'published';
@@ -1029,8 +1091,9 @@ function renderCard(c) {
   const account   = c.accountSize || 10000;
   const pnlPct    = pos.realizedPnL / account * 100;
   const assetPct  = calcAssetReturn(c);
-  const imgHTML = c.image
-    ? `<img class="cc-img" src="${c.image}" alt="${esc(c.asset)}">`
+  const miniatura = c.thumb || c.image;   // miniatura; 'image' solo en casos sin migrar
+  const imgHTML = miniatura
+    ? `<img class="cc-img" src="${miniatura}" alt="${esc(c.asset)}">`
     : `<div class="cc-no-img">📊</div>`;
   return `
     <div class="case-card" data-action="open-case" data-id="${c.id}">
@@ -1201,8 +1264,8 @@ function renderForm() {
     <div class="section">
       <div class="sec-title">📷 Imagen del Gráfico</div>
       <div class="img-zone ${locked?'locked':''}" id="drop-zone" ${locked?'':'data-action="pick-img"'}>
-        ${c.image
-          ? `<img src="${c.image}" alt="gráfico" data-action="zoom-img" style="cursor:zoom-in" title="Click para ampliar">
+        ${(c.image || c.thumb)
+          ? `<img src="${c.image || c.thumb}" alt="gráfico" data-action="zoom-img" style="cursor:zoom-in" title="Click para ampliar">
              ${!locked?`<p style="margin-top:8px;color:var(--muted);font-size:12px">Click para ampliar · Fuera de la imagen para cambiar</p>`:
                        `<p style="margin-top:8px;color:var(--muted);font-size:12px">Click para ampliar</p>`}`
           : `<div style="font-size:48px;margin-bottom:10px">📈</div>
@@ -1211,7 +1274,7 @@ function renderForm() {
              </div>`}
       </div>
       ${!locked ? `<input type="file" id="img-input" accept="image/*" style="display:none" data-action="img-upload">` : ''}
-      ${!locked && c.image ? `<button class="btn btn-ghost btn-sm" style="margin-top:8px" data-action="remove-img">✕ Quitar imagen</button>` : ''}
+      ${!locked && (c.image || c.thumb) ? `<button class="btn btn-ghost btn-sm" style="margin-top:8px" data-action="remove-img">✕ Quitar imagen</button>` : ''}
     </div>
 
     <!-- INFO GENERAL -->
@@ -1477,6 +1540,24 @@ function openCase(id) {
   S.editing = JSON.parse(JSON.stringify(c));
   S.adminMode = false;
   S.view = 'form'; render();
+  hidratarImagen(S.editing);   // la imagen completa se pide solo ahora
+}
+
+// Trae la imagen completa y la inyecta en el hueco, sin re-renderizar el
+// formulario entero (eso borraria lo que el usuario este escribiendo).
+function hidratarImagen(c) {
+  if (c.image) return;                       // ya la tiene
+  firestoreLoadImage(c.id).then(full => {
+    if (!full) return;
+    c.image = full;
+    if (S.view !== 'form' || !S.editing || S.editing.id !== c.id) return;
+    S.editing.image = full;
+    const z = document.getElementById('drop-zone');
+    if (!z) return;
+    const bloqueado = z.classList.contains('locked');
+    z.innerHTML = `<img src="${full}" alt="gráfico" data-action="zoom-img" style="cursor:zoom-in" title="Click para ampliar">
+      ${bloqueado ? '' : '<p style="margin-top:8px;color:var(--muted);font-size:12px">Click en la imagen para ampliar · Click fuera para cambiar</p>'}`;
+  });
 }
 
 function collectFormValues() {
@@ -1551,15 +1632,22 @@ function goBack() {
   });
 }
 
-function exportData() {
-  const data = { version: 1, exportedAt: new Date().toISOString(), cases: S.cases };
+async function exportData() {
+  // Las imagenes ya no viven en el caso: hay que traerlas para que la
+  // copia de seguridad este completa.
+  toast('📤 Preparando la exportación…');
+  const casos = await Promise.all(S.cases.map(async c => {
+    const image = c.image || await firestoreLoadImage(c.id);
+    return { ...c, image: image || null };
+  }));
+  const data = { version: 1, exportedAt: new Date().toISOString(), cases: casos };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `casos-estudio-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
-  toast(`📤 ${S.cases.length} casos exportados`);
+  toast(`📤 ${casos.length} casos exportados`);
 }
 
 function importData(e) {
@@ -1588,13 +1676,20 @@ function importData(e) {
             if (idx >= 0) S.cases[idx] = c; else S.cases.push(c);
           });
           if (db) {
+            // La imagen de cada caso se guarda aparte, no dentro del caso.
+            incoming.forEach(c => { if (c.image) firestoreSaveImage(c.id, c.image); });
             const batch = db.batch();
-            incoming.forEach(c => batch.set(db.collection('cases').doc(c.id), c));
+            incoming.forEach(c => {
+              const { image, ...meta } = c;
+              batch.set(db.collection('cases').doc(c.id), meta);
+            });
             batch.commit().catch(e => { console.warn('Import Firestore batch error:', e); toast('⚠️ Error al subir la importación', 'err'); });
           }
           persist();
           toast(`✅ Importación completada: ${msg}`);
           render();
+          // Los casos importados traen la imagen dentro: separarla y crear miniatura
+          migrarImagenes().then(r => { if (r.ok) render(); });
         }
       });
     } catch(err) {
@@ -1741,13 +1836,14 @@ function handleImg(e) {
   r.onload = async ev => {
     const compressed = await compressImage(ev.target.result);
     S.editing.image = compressed;
+    S.editing.thumb = await makeThumb(ev.target.result);
     const z = document.getElementById('drop-zone');
     if (z) z.innerHTML = `<img src="${compressed}" alt="gráfico" data-action="zoom-img" style="cursor:zoom-in">
       <p style="margin-top:8px;color:var(--muted);font-size:12px">Click en la imagen para ampliar · Click fuera para cambiar</p>`;
   };
   r.readAsDataURL(file);
 }
-function removeImg() { S.editing.image = null; render(); }
+function removeImg() { S.editing.image = null; S.editing.thumb = null; render(); }
 
 function openLightbox(src) {
   const lb = document.createElement('div');
@@ -1760,13 +1856,15 @@ function openLightbox(src) {
 // Comprime hasta bajar de un límite real de bytes.
 // Necesario: los documentos de Firestore topan en 1 MiB y la caché
 // localStorage en ~5 MB para TODOS los casos juntos.
-const IMG_MAX_BYTES = 180 * 1024;   // ~180 KB por imagen
-function compressImage(dataUrl) {
+const IMG_MAX_BYTES   = 180 * 1024;   // imagen completa, en /caseImages
+const THUMB_MAX_BYTES =  18 * 1024;   // miniatura, viaja dentro del caso
+
+function encogerImagen(dataUrl, maxBytes, anchoInicial, calidadInicial) {
   return new Promise(resolve => {
     const img = new Image();
     img.onerror = () => resolve(dataUrl);
     img.onload = () => {
-      let maxW = 1400, q = 0.78, out = dataUrl;
+      let maxW = anchoInicial, q = calidadInicial, out = dataUrl;
       for (let i = 0; i < 8; i++) {
         let w = img.width, h = img.height;
         if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
@@ -1774,7 +1872,7 @@ function compressImage(dataUrl) {
         cv.width = w; cv.height = h;
         cv.getContext('2d').drawImage(img, 0, 0, w, h);
         out = cv.toDataURL('image/jpeg', q);
-        if (out.length <= IMG_MAX_BYTES) break;
+        if (out.length <= maxBytes) break;
         // alterna: primero baja calidad, luego resolución
         if (q > 0.5) q -= 0.12; else maxW = Math.round(maxW * 0.75);
       }
@@ -1782,6 +1880,16 @@ function compressImage(dataUrl) {
     };
     img.src = dataUrl;
   });
+}
+
+function compressImage(dataUrl) {
+  return encogerImagen(dataUrl, IMG_MAX_BYTES, 1400, 0.78);
+}
+
+// Miniatura para la rejilla: pequeña de verdad, porque de estas
+// se descargan todas a la vez al abrir la web.
+function makeThumb(dataUrl) {
+  return encogerImagen(dataUrl, THUMB_MAX_BYTES, 420, 0.62);
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1864,7 +1972,7 @@ document.addEventListener('click', function(e) {
     case 'admin-delete':          adminDelete(); break;
     case 'export':       exportData(); break;
     case 'import-pick':  document.getElementById('import-input')?.click(); break;
-    case 'zoom-img':     e.stopPropagation(); if(el.src) openLightbox(el.src); break;
+    case 'zoom-img':     e.stopPropagation(); { const full = S.editing?.image || imgCache[S.editing?.id] || el.src; if (full) openLightbox(full); } break;
   }
 });
 

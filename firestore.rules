@@ -29,6 +29,12 @@ service cloud.firestore {
       return img == null || (img is string && img.size() <= 600000);
     }
 
+    // La miniatura sí viaja dentro del caso: es pequeña y la rejilla
+    // la necesita al cargar. La imagen completa vive en /caseImages.
+    function miniaturaValida(t) {
+      return t == null || (t is string && t.size() <= 60000);
+    }
+
     function casoValido(d) {
       return d.keys().hasAll(['id', 'status'])
           && d.keys().size() <= 30
@@ -39,6 +45,7 @@ service cloud.firestore {
           && texto(d.get('notes', ''), 8000)
           && texto(d.get('timeframe', ''), 30)
           && imagenValida(d.get('image', null))
+          && miniaturaValida(d.get('thumb', null))
           && d.get('operations', []) is list
           && d.get('operations', []).size() <= 100;
     }
@@ -61,6 +68,20 @@ service cloud.firestore {
       // Borrado imposible desde la API. La app usa "Descartar"
       // (status 'discarded'), que es reversible y conserva el caso.
       // Un borrado real solo se hace desde la consola de Firebase.
+      allow delete: if false;
+    }
+
+    // Imágenes completas, una por caso y en documento aparte.
+    // Están fuera de /cases para que la lista NO se las descargue:
+    // la app solo pide la imagen al abrir un caso concreto.
+    match /caseImages/{caseId} {
+
+      allow read: if true;
+
+      // Solo el campo 'image', nada más, y con el mismo tope de tamaño.
+      allow create, update: if request.resource.data.keys().hasOnly(['image'])
+                            && imagenValida(request.resource.data.get('image', null));
+
       allow delete: if false;
     }
 
