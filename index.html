@@ -400,16 +400,43 @@ const S = {
 };
 
 function load()         { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } }
-function persistLocal() { localStorage.setItem(KEY, JSON.stringify(S.cases)); }
-function persist()      { persistLocal(); }   // alias backward-compat
+
+// localStorage es solo una caché de arranque: Firestore es la fuente de verdad.
+// Nunca debe lanzar — si la cuota (~5 MB) se llena, degrada en vez de romper el guardado.
+function persistLocal() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(S.cases));
+    return true;
+  } catch (e) {
+    // Nivel 2: guardar sin imágenes (se recuperan de Firestore al recargar)
+    try {
+      localStorage.setItem(KEY, JSON.stringify(S.cases.map(c => ({ ...c, image: null }))));
+      console.warn('localStorage lleno: caché guardada sin imágenes.', e);
+      return true;
+    } catch (e2) {
+      // Nivel 3: rendirse sin romper nada — los datos ya van a Firestore
+      try { localStorage.removeItem(KEY); } catch {}
+      console.warn('localStorage lleno: caché local desactivada.', e2);
+      return false;
+    }
+  }
+}
+function persist()      { return persistLocal(); }   // alias backward-compat
 function getDefaultAuthor()  { return localStorage.getItem(AUTHOR_KEY) || ''; }
 function saveDefaultAuthor(n){ if (n && n.trim()) localStorage.setItem(AUTHOR_KEY, n.trim()); }
 
 // ── Firebase helpers ──────────────────────────────────────────────
 function firestoreSave(c) {
-  if (!db) return;
+  if (!db) {
+    // Sin conexión con la nube el caso solo vive en este navegador y puede perderse
+    if (FIREBASE_READY) toast('⚠️ Sin conexión: el caso no se ha subido. No cierres sin reintentar.', 'err');
+    return;
+  }
   db.collection('cases').doc(c.id).set(c)
-    .catch(e => { console.warn('Firestore save:', e); toast('⚠️ Error de sincronización', 'err'); });
+    .catch(e => {
+      console.warn('Firestore save:', e);
+      toast('⚠️ No se pudo subir el caso: ' + (e.message || e.code || 'error'), 'err');
+    });
 }
 function firestoreDelete(caseId) {
   if (!db) return;
@@ -1480,8 +1507,10 @@ function saveCase() {
   }
   const idx = S.cases.findIndex(x => x.id === c.id);
   if (idx >= 0) S.cases[idx] = c; else S.cases.unshift(c);
-  persist();
+  // Primero la nube (fuente de verdad), después la caché local:
+  // así un fallo de la caché nunca impide que el caso se guarde de verdad.
   firestoreSave(c);
+  persist();
   S.adminMode = false;
   toast(msg);
   render();
@@ -1496,8 +1525,8 @@ function deleteCase() {
     onConfirm: () => {
       const id = S.editing.id;
       S.cases = S.cases.filter(x => x.id !== id);
-      persist(); S.view = 'list'; S.editing = null; S.adminMode = false;
-      firestoreDelete(id);
+      firestoreDelete(id); persist();
+      S.view = 'list'; S.editing = null; S.adminMode = false;
       toast('🗑 Caso eliminado'); render();
     }
   });
@@ -1548,12 +1577,12 @@ function importData(e) {
             const idx = S.cases.findIndex(x => x.id === c.id);
             if (idx >= 0) S.cases[idx] = c; else S.cases.push(c);
           });
-          persist();
           if (db) {
             const batch = db.batch();
             incoming.forEach(c => batch.set(db.collection('cases').doc(c.id), c));
-            batch.commit().catch(e => console.warn('Import Firestore batch error:', e));
+            batch.commit().catch(e => { console.warn('Import Firestore batch error:', e); toast('⚠️ Error al subir la importación', 'err'); });
           }
+          persist();
           toast(`✅ Importación completada: ${msg}`);
           render();
         }
@@ -1569,7 +1598,7 @@ function importData(e) {
 function adminSaveStatus(c) {
   const idx = S.cases.findIndex(x => x.id === c.id);
   if (idx >= 0) S.cases[idx] = c; else S.cases.unshift(c);
-  persist(); firestoreSave(c);
+  firestoreSave(c); persist();
 }
 
 // Desbloquear edición (admin)
@@ -1677,7 +1706,7 @@ function adminDelete() {
       onConfirm: () => {
         const id = S.editing.id;
         S.cases = S.cases.filter(x => x.id !== id);
-        persist(); firestoreDelete(id);
+        firestoreDelete(id); persist();
         S.adminMode = false; S.view = 'list'; S.editing = null;
         toast('🗑 Caso eliminado definitivamente'); render();
       }
@@ -1710,19 +1739,28 @@ function openLightbox(src) {
   document.body.appendChild(lb);
 }
 
-// Compress image to keep Firestore documents small (<900 KB)
+// Comprime hasta bajar de un límite real de bytes.
+// Necesario: los documentos de Firestore topan en 1 MiB y la caché
+// localStorage en ~5 MB para TODOS los casos juntos.
+const IMG_MAX_BYTES = 180 * 1024;   // ~180 KB por imagen
 function compressImage(dataUrl) {
   return new Promise(resolve => {
     const img = new Image();
     img.onerror = () => resolve(dataUrl);
     img.onload = () => {
-      const MAX = 1400;
-      let w = img.width, h = img.height;
-      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-      const cv = document.createElement('canvas');
-      cv.width = w; cv.height = h;
-      cv.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(cv.toDataURL('image/jpeg', 0.78));
+      let maxW = 1400, q = 0.78, out = dataUrl;
+      for (let i = 0; i < 8; i++) {
+        let w = img.width, h = img.height;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        out = cv.toDataURL('image/jpeg', q);
+        if (out.length <= IMG_MAX_BYTES) break;
+        // alterna: primero baja calidad, luego resolución
+        if (q > 0.5) q -= 0.12; else maxW = Math.round(maxW * 0.75);
+      }
+      resolve(out);
     };
     img.src = dataUrl;
   });
