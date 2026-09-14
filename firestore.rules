@@ -1,0 +1,73 @@
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════════════
+//  Reglas de seguridad — casos-estudio
+//
+//  LÍMITE IMPORTANTE: la app no tiene sistema de login. Sin autenticación
+//  las reglas NO pueden distinguir a un miembro de la comunidad de un
+//  desconocido, porque ambos llegan igual de anónimos. El PIN de admin
+//  vive en el código del navegador, así que tampoco sirve como barrera.
+//
+//  Por eso estas reglas no intentan decidir QUIÉN escribe (imposible hoy),
+//  sino hacer que las operaciones DESTRUCTIVAS sean imposibles para
+//  cualquiera. Lo peor que puede hacer un atacante es añadir casos basura,
+//  que se limpian; lo que ya no puede es destruir los casos reales.
+//
+//  Si algún día se quiere seguridad de verdad, hace falta Firebase Auth.
+// ═══════════════════════════════════════════════════════════════════
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function texto(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    // Topes holgados sobre los datos reales, para no romper la edición
+    // de casos que ya existen (la imagen mayor a día de hoy son 525 KB).
+    function imagenValida(img) {
+      return img == null || (img is string && img.size() <= 600000);
+    }
+
+    function casoValido(d) {
+      return d.keys().hasAll(['id', 'status'])
+          && d.keys().size() <= 30
+          && texto(d.id, 64)
+          && d.status in ['open', 'pending', 'published', 'discarded']
+          && texto(d.get('asset', ''), 60)
+          && texto(d.get('authorName', ''), 120)
+          && texto(d.get('notes', ''), 8000)
+          && texto(d.get('timeframe', ''), 30)
+          && imagenValida(d.get('image', null))
+          && d.get('operations', []) is list
+          && d.get('operations', []).size() <= 100;
+    }
+
+    match /cases/{caseId} {
+
+      // Lectura pública: es una web comunitaria sin cuentas.
+      allow read: if true;
+
+      // Crear: forma válida y el id del documento debe coincidir con el campo.
+      allow create: if casoValido(request.resource.data)
+                    && request.resource.data.id == caseId;
+
+      // Actualizar: forma válida, sin poder reescribir la identidad del caso.
+      allow update: if casoValido(request.resource.data)
+                    && request.resource.data.id == resource.data.id
+                    && request.resource.data.get('createdAt', '')
+                       == resource.data.get('createdAt', '');
+
+      // Borrado imposible desde la API. La app usa "Descartar"
+      // (status 'discarded'), que es reversible y conserva el caso.
+      // Un borrado real solo se hace desde la consola de Firebase.
+      allow delete: if false;
+    }
+
+    // Cualquier otra colección, cerrada: impide que alguien cree
+    // colecciones nuevas y llene el proyecto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

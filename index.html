@@ -438,10 +438,11 @@ function firestoreSave(c) {
       toast('⚠️ No se pudo subir el caso: ' + (e.message || e.code || 'error'), 'err');
     });
 }
+// Sin uso: las reglas de Firestore prohiben el borrado para que nadie
+// pueda destruir casos. Se descarta (status 'discarded'), que es reversible.
+// Se conserva para que una llamada antigua avise en vez de fallar en silencio.
 function firestoreDelete(caseId) {
-  if (!db) return;
-  db.collection('cases').doc(caseId).delete()
-    .catch(e => console.warn('Firestore delete:', e));
+  console.warn('firestoreDelete ignorado: el borrado esta prohibido por reglas. Usa status discarded.', caseId);
 }
 function updateSyncStatus(state) {
   const el = document.getElementById('sync-status');
@@ -1134,7 +1135,7 @@ function renderForm() {
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-ghost btn-sm" data-action="go-back">← Volver</button>
       ${!locked ? `<button class="btn btn-primary" data-action="save-case">💾 Guardar</button>` : ''}
-      ${status === 'open' && !isNew ? `<button class="btn btn-danger btn-sm" data-action="delete-case">🗑 Eliminar</button>` : ''}
+      ${status === 'open' && !isNew ? `<button class="btn btn-danger btn-sm" data-action="delete-case">🗑 Descartar</button>` : ''}
       ${S.adminMode ? `<button class="btn btn-warning btn-sm" data-action="exit-admin-mode">🔓 Salir admin</button>` : ''}
     </div>`;
 
@@ -1156,7 +1157,7 @@ function renderForm() {
           ${adminBtn('admin-unlock',        '🔓 Editar')}
           ${adminBtn('admin-move-to-pending','⬅ Pte. Validación','background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.4)')}
           ${adminBtn('admin-discard',        '❌ Descartar','background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.4)')}
-          ${adminBtn('admin-delete',         '🗑 Eliminar','background:var(--red-d);color:var(--red);border:1px solid #991b1b')}
+          ${adminBtn('admin-delete',         '🗑 Descartar','background:var(--red-d);color:var(--red);border:1px solid #991b1b')}
         </div>
       </div>`;
     if (status === 'pending') return `
@@ -1181,7 +1182,7 @@ function renderForm() {
           ${adminBtn('admin-unlock',         '🔓 Editar','color:var(--sec);background:var(--card);border:1px solid var(--border)')}
           ${adminBtn('admin-publish',        '✅ Publicar','background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.4)')}
           ${adminBtn('admin-move-to-pending','⬅ Pte. Validación','background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.4)')}
-          ${adminBtn('admin-delete',         '🗑 Eliminar','background:var(--red-d);color:var(--red);border:1px solid #991b1b')}
+          ${adminBtn('admin-delete',         '🗑 Descartar','background:var(--red-d);color:var(--red);border:1px solid #991b1b')}
         </div>
       </div>`;
     return '';
@@ -1516,18 +1517,27 @@ function saveCase() {
   render();
 }
 
+// Descartar en vez de borrar: el borrado real está prohibido en las reglas
+// de Firestore para que nadie pueda destruir casos. 'discarded' es reversible.
 function deleteCase() {
   showModal({
-    title: '🗑 Eliminar caso',
-    body: '¿Eliminar este caso? No se puede deshacer.',
-    confirmLabel: 'Eliminar',
+    title: '🗑 Descartar caso',
+    body: 'El caso pasará a <strong>Descartados</strong>. No se borra: un administrador puede recuperarlo.',
+    inputType: 'text',
+    inputLabel: 'Motivo (opcional)',
+    placeholder: 'Ej: me he equivocado al crearlo...',
+    confirmLabel: 'Descartar',
     danger: true,
-    onConfirm: () => {
-      const id = S.editing.id;
-      S.cases = S.cases.filter(x => x.id !== id);
-      firestoreDelete(id); persist();
-      S.view = 'list'; S.editing = null; S.adminMode = false;
-      toast('🗑 Caso eliminado'); render();
+    onConfirm: reason => {
+      const c = S.editing;
+      c.status = 'discarded'; c.validated = false;
+      c.discardReason = (reason || '').trim() || 'Descartado por el autor';
+      c.discardedAt = new Date().toISOString();
+      const idx = S.cases.findIndex(x => x.id === c.id);
+      if (idx >= 0) S.cases[idx] = c; else S.cases.unshift(c);
+      firestoreSave(c); persist();
+      S.view = 'list'; S.listTab = 'discarded'; S.editing = null; S.adminMode = false;
+      toast('🗑 Caso descartado'); render();
     }
   });
 }
@@ -1699,16 +1709,24 @@ function adminDelete() {
   const asset = esc(S.editing.asset || 'sin título');
   withAdminPin(() => {
     showModal({
-      title: '🗑 Eliminar definitivamente',
-      body: `¿Eliminar <strong>${asset}</strong>? Esta acción <strong>no se puede deshacer</strong>.`,
-      confirmLabel: 'Eliminar',
+      title: '🗑 Descartar caso',
+      body: `<strong>${asset}</strong> pasará a Descartados.<br><br>` +
+            `El borrado definitivo ya no se hace desde aquí: las reglas de Firestore lo impiden ` +
+            `para que nadie pueda destruir casos. Si de verdad hay que eliminarlo, se hace desde ` +
+            `la consola de Firebase.`,
+      inputType: 'text',
+      inputLabel: 'Motivo del descarte',
+      placeholder: 'Ej: No cumple criterios de riesgo...',
+      confirmLabel: 'Descartar',
       danger: true,
-      onConfirm: () => {
-        const id = S.editing.id;
-        S.cases = S.cases.filter(x => x.id !== id);
-        firestoreDelete(id); persist();
-        S.adminMode = false; S.view = 'list'; S.editing = null;
-        toast('🗑 Caso eliminado definitivamente'); render();
+      onConfirm: reason => {
+        const c = S.editing;
+        c.status = 'discarded'; c.validated = false;
+        c.discardReason = (reason || '').trim() || 'Descartado por administración';
+        c.discardedAt = new Date().toISOString();
+        adminSaveStatus(c);
+        S.adminMode = false; S.view = 'list'; S.listTab = 'discarded'; S.editing = null;
+        toast('🗑 Caso descartado'); render();
       }
     });
   });
