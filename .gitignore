@@ -1,0 +1,8 @@
+# Config local de Claude Code
+.claude/
+
+# Copias de la base de datos (datos de los miembros): viven en OneDrive, NUNCA en este repo público
+copias-seguridad/
+*.jsonl
+
+.env*
